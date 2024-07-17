@@ -1,0 +1,19 @@
+// vite.config.js
+import { defineConfig } from "file:///home/user/Desktop/work/IndoreBattery8feb/IndoreBatteryFrontend12feb/node_modules/vite/dist/node/index.js";
+import react from "file:///home/user/Desktop/work/IndoreBattery8feb/IndoreBatteryFrontend12feb/node_modules/@vitejs/plugin-react/dist/index.mjs";
+var vite_config_default = defineConfig({
+  plugins: [react()],
+  server: {
+    host: true,
+    proxy: {
+      "/api": {
+        target: "https://batterybackend.react.stagingwebsite.co.in",
+        changeOrigin: true
+      }
+    }
+  }
+});
+export {
+  vite_config_default as default
+};
+//# sourceMappingURL=data:application/json;base64,ewogICJ2ZXJzaW9uIjogMywKICAic291cmNlcyI6IFsidml0ZS5jb25maWcuanMiXSwKICAic291cmNlc0NvbnRlbnQiOiBbImNvbnN0IF9fdml0ZV9pbmplY3RlZF9vcmlnaW5hbF9kaXJuYW1lID0gXCIvaG9tZS91c2VyL0Rlc2t0b3Avd29yay9JbmRvcmVCYXR0ZXJ5OGZlYi9JbmRvcmVCYXR0ZXJ5RnJvbnRlbmQxMmZlYlwiO2NvbnN0IF9fdml0ZV9pbmplY3RlZF9vcmlnaW5hbF9maWxlbmFtZSA9IFwiL2hvbWUvdXNlci9EZXNrdG9wL3dvcmsvSW5kb3JlQmF0dGVyeThmZWIvSW5kb3JlQmF0dGVyeUZyb250ZW5kMTJmZWIvdml0ZS5jb25maWcuanNcIjtjb25zdCBfX3ZpdGVfaW5qZWN0ZWRfb3JpZ2luYWxfaW1wb3J0X21ldGFfdXJsID0gXCJmaWxlOi8vL2hvbWUvdXNlci9EZXNrdG9wL3dvcmsvSW5kb3JlQmF0dGVyeThmZWIvSW5kb3JlQmF0dGVyeUZyb250ZW5kMTJmZWIvdml0ZS5jb25maWcuanNcIjtpbXBvcnQgeyBkZWZpbmVDb25maWcgfSBmcm9tICd2aXRlJ1xuaW1wb3J0IHJlYWN0IGZyb20gJ0B2aXRlanMvcGx1Z2luLXJlYWN0J1xuXG4vLyBodHRwczovL3ZpdGVqcy5kZXYvY29uZmlnL1xuZXhwb3J0IGRlZmF1bHQgZGVmaW5lQ29uZmlnKHtcbiAgcGx1Z2luczogW3JlYWN0KCldLFxuICBzZXJ2ZXI6e1xuICAgIGhvc3Q6dHJ1ZSxcblx0cHJveHk6IHtcbiAgICAgICAgJy9hcGknOiB7XG5cdFx0XHR0YXJnZXQ6ICdodHRwOi8vMTkyLjE2OC4xNi4zNjo0MDAwJyxcblx0XHRcdGNoYW5nZU9yaWdpbjogdHJ1ZSxcbiAgICAgICAgfSxcblx0fSxcbiAgfVxufSlcbiJdLAogICJtYXBwaW5ncyI6ICI7QUFBOFgsU0FBUyxvQkFBb0I7QUFDM1osT0FBTyxXQUFXO0FBR2xCLElBQU8sc0JBQVEsYUFBYTtBQUFBLEVBQzFCLFNBQVMsQ0FBQyxNQUFNLENBQUM7QUFBQSxFQUNqQixRQUFPO0FBQUEsSUFDTCxNQUFLO0FBQUEsSUFDUixPQUFPO0FBQUEsTUFDQSxRQUFRO0FBQUEsUUFDYixRQUFRO0FBQUEsUUFDUixjQUFjO0FBQUEsTUFDVDtBQUFBLElBQ1A7QUFBQSxFQUNDO0FBQ0YsQ0FBQzsiLAogICJuYW1lcyI6IFtdCn0K

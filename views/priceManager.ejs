@@ -1,0 +1,94 @@
+<div style="width: 100%;height: 100%;padding: 15px; overflow-y: auto;padding-bottom: 50px;">
+	<div>
+		<div>
+			<h3 style="font-size: 18px;font-weight: 500;">Manage Product Price </h3>
+		</div>
+		<div style="display: flex; align-items: flex-start;gap: 7px; flex-direction: column;">
+			<h5
+				style="font-weight: 600; font-size: 13px; text-transform: uppercase;margin: 3px; border-bottom: 1px solid rgba(0,0,0,0.25);padding-bottom: 5px;">
+				Global Price Increase
+			</h5>
+			<p style="font-size: 13px;font-weight: 500;color: #484848;margin: 0;padding: 0;">(Increase the price of all
+				batteries of a particular brand / or all brands)</p>
+			<form action="/api/v1/manage/common-price-hike" method="post" enctype="application/x-www-form-urlencoded">
+				<div style="padding-bottom: 10px;">
+					<select name="brand" style="margin-bottom: 10px;padding: 4px 10px;">
+						<option value="">Choose a brand</option>
+						<% for(let item of allBrands) { %>
+							<option value="<%= item?.postData?.brandName %>">
+								<%= item?.postData?.brandName %>
+							</option>
+							<% } %>
+					</select>
+					<br>
+					<label for="">Price Hike</label>
+					<div class="mb-3" style="display: flex;align-items: center;">
+						<span style="padding: 5px;font-weight: 600;" id="basic-addon1">%</span>
+						<input id="price-manage-change-factor" name="changeFactor" type="number" step="0.01"
+							style="padding: 5px;outline: none;border: 1px solid rgba(0,0,0,0.2);" placeholder="Price"
+							aria-label="Username" aria-describedby="basic-addon1">
+					</div>
+					<button class="button-secondary-blue">Update</button>
+				</div>
+			</form>
+		</div>
+
+		<table cellspacing="0" cellpadding="0" width="100%" style="border: 1px solid rgba(0,0,0,0.25);">
+			<thead style="border-bottom: 2px solid #d8d8d8;background-color: #fff;">
+				<tr>
+					<th>
+						<div style="display: flex; align-items: center; justify-content: start;padding: 10px;">
+							<h3 style="font-size: 13px;margin: 0px;">S.No.</h3>
+						</div>
+					</th>
+					<th>
+						<div style="display: flex; align-items: center; justify-content: start;padding: 10px;">
+							<h3 style="font-size: 13px;margin: 0px;">Product Name</h3>
+						</div>
+					</th>
+					<th>
+						<div style="display: flex; align-items: center; justify-content: start;padding: 10px;">
+							<h3 style="font-size: 13px;margin: 0px;">Product Image</h3>
+						</div>
+					</th>
+					<th>
+						<div style="display: flex; align-items: center; justify-content: start;padding: 10px;">
+							<h3 style="font-size: 13px;margin: 0px;">Action</h3>
+						</div>
+					</th>
+				</tr>
+			</thead>
+			<tbody>
+				<% products.forEach((item, index)=> { %>
+					<tr>
+						<td style="padding: 5px 10px;font-size: 13px;">
+							<span style="color: #2271B7;font-weight: 500;">
+								<%= index + 1 %>
+							</span>
+						</td>
+						<td style="padding: 5px 10px;font-size: 13px;">
+							<span style="color: #2271B7;font-weight: 500;">
+								<%= item?.postData?.name %>
+							</span>
+						</td>
+						<td style="padding: 5px 10px;font-size: 13px;">
+							<span style="color: #2271B7;font-weight: 500;">
+								<figure style="width: 50px;">
+									<img style="width: 100%;"
+										src="batterybackend.react.stagingwebsite.co.in/images/<%= item?.postData?.batteryimages %>"
+										alt="product image">
+								</figure>
+							</span>
+						</td>
+						<td style="padding: 5px 10px;font-size: 13px; cursor: pointer;">
+							<span style="color: #2271B7;font-weight: 500;">
+								<a style="color: rgba(0, 128, 0, 0.7);" href="/api/v1/manage/product/<%=item._id %>/manage-price"><i
+										class="fa-sharp fa-solid fa-pen"></i> Manage</a>
+							</span>
+						</td>
+					</tr>
+					<% }) %>
+			</tbody>
+		</table>
+	</div>
+</div>

@@ -1,0 +1,261 @@
+<div style="width: 100%;height: 100%;padding: 15px; overflow-y: auto;">
+	<div>
+		<div style="display: flex; align-items: center;gap: 15px;">
+			<h3 style="font-size: 18px;font-weight: 500;">Order Details</h3>
+		</div>
+		<table class="order-detail-table" cellspacing="0" cellpadding="0" width="100%"
+			style="border: 1px solid rgba(0,0,0,0.25);">
+			<thead style="border-bottom: 2px solid #d8d8d8;background-color: #fff;">
+				<tr>
+					<th>
+						<div style="display: flex; align-items: center; justify-content: start;padding: 10px;">
+							<h3 style="font-size: 13px;margin: 0px;">Field</h3>
+						</div>
+					</th>
+					<th>
+						<div style="display: flex; align-items: center; justify-content: start;padding: 10px;">
+							<h3 style="font-size: 13px;margin: 0px;">Value</h3>
+						</div>
+					</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td>Order Id</td>
+					<td>
+						<%= order.orderId %>
+					</td>
+				</tr>
+				<tr>
+					<td>Order Total</td>
+					<td>
+						<%= order.orderTotal %>
+					</td>
+				</tr>
+				<tr>
+					<td>Sub Total</td>
+					<td style="font-weight: 600;color: green;">
+						<%= order.subTotal %>
+					</td>
+				</tr>
+				<tr>
+					<td>Placed At</td>
+					<td>
+						<%= new Date(order.createdAt).toLocaleDateString() %>
+					</td>
+				</tr>
+				<tr>
+					<td>Billing Address</td>
+					<td>
+						<%= order.billingAddress.addressLineOne+" "+order.billingAddress.addressLineTwo %></td>
+				</tr>
+				<tr>
+					<td>Shipping Address</td>
+					<td><%= order.shippingAddress.addressLineOne+" "+order.shippingAddress.addressLineTwo %></td>
+				</tr>
+				<tr>
+					<td>Order Quantity</td>
+					<td><%= order.quantity %></td>
+				</tr>
+				<tr>
+					<td>Buyer Information</td>
+					<td>
+						<table>
+							<tr>
+								<td>Name</td>
+								<td><%= order.buyerInformation.firstName+" "+order.buyerInformation.lastName %></td>
+							</tr>
+							<tr>
+								<td>Email</td>
+								<td><%= order.buyerInformation.email %></td>
+							</tr>
+							<tr>
+								<td>Phone</td>
+								<td><%= order.buyerInformation.phone %></td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+				<tr>
+					<td>Express Delivery</td>
+					<td style=" text-transform: uppercase;color: orangered;font-weight: 600;">
+							<%= order.expressDelivery %>
+					</td>
+				</tr>
+				<tr>
+					<td>Status</td>
+					<td style="font-weight: 600;"
+						class="<%= order.status === 'Cash__Pending' ? 'order-status-pending':'order-status-complete' %>">
+						<%= order.status==="Cash__Pending" ? "Payment Pending" :"Completed" %>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+		<div style="display: flex; align-items: center;gap: 15px;margin-top: 25px;">
+			<h3 style="font-size: 18px;font-weight: 500;">Payment Details</h3>
+		</div>
+		<table class="order-detail-table" cellspacing="0" cellpadding="0" width="100%"
+			style="border: 1px solid rgba(0,0,0,0.25);">
+			<thead style="border-bottom: 2px solid #d8d8d8;background-color: #fff;">
+				<tr>
+					<th>
+						<div style="display: flex; align-items: center; justify-content: start;padding: 10px;">
+							<h3 style="font-size: 13px;margin: 0px;">Field</h3>
+						</div>
+					</th>
+					<th>
+						<div style="display: flex; align-items: center; justify-content: start;padding: 10px;">
+							<h3 style="font-size: 13px;margin: 0px;">Value</h3>
+						</div>
+					</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td>Payment Method</td>
+					<td>
+						<%= order.paymentMethod %>
+					</td>
+				</tr>
+				<% if(order.paymentMethod==='Online' ) { %>
+					<tr>
+						<td>Razorpay Order Id</td>
+						<td>
+							<%= order.razorpayOrderId %>
+						</td>
+					</tr>
+					<tr>
+						<td>Razorpay Order Receipt</td>
+						<td>
+							<%= order.razorpayOrderReceipt %>
+						</td>
+					</tr>
+					<tr>
+						<td>Razorpay Payment Id</td>
+						<td>
+							<%= order.razorpayPaymentId %>
+						</td>
+					</tr>
+					<% } %>
+			</tbody>
+			<tbody>
+
+			</tbody>
+		</table>
+		<div style="display: flex; align-items: center;gap: 15px;margin-top: 25px;">
+			<h3 style="font-size: 18px;font-weight: 500;">Delivery Details</h3>
+		</div>
+		<table class="order-detail-table" cellspacing="0" cellpadding="0" width="100%"
+			style="border: 1px solid rgba(0,0,0,0.25);">
+			<thead style="border-bottom: 2px solid #d8d8d8;background-color: #fff;">
+				<tr>
+					<th>
+						<div style="display: flex; align-items: center; justify-content: start;padding: 10px;">
+							<h3 style="font-size: 13px;margin: 0px;">Field</h3>
+						</div>
+					</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td style="border-top:1px solid rgba(0,0,0,0.25);border-bottom: 1px solid rgba(0,0,0,0.25);">Billing Address:
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<table>
+							<tr>
+								<td>Address Line One</td>
+								<td>
+									<%= order.billingAddress.addressLineOne %>
+								</td>
+							</tr>
+							<tr>
+								<td>Address Line Two</td>
+								<td>
+									<%= order.billingAddress.addressLineTwo %>
+								</td>
+							</tr>
+							<tr>
+								<td>State</td>
+								<td>
+									<%= order.billingAddress.state %>
+								</td>
+							</tr>
+							<tr>
+								<td>City</td>
+								<td>
+									<%= order.billingAddress.city %>
+								</td>
+							</tr>
+							<tr>
+								<td>Pincode</td>
+								<td>
+									<%= order.billingAddress.pinCode %>
+								</td>
+							</tr>
+							<tr>
+								<td>Country</td>
+								<td>
+									<%= order.billingAddress.country %>
+								</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+				<tr>
+					<td style="border-top:1px solid rgba(0,0,0,0.25);border-bottom: 1px solid rgba(0,0,0,0.25);">Shipping Address:
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<table>
+							<tr>
+								<td>Address Line One</td>
+								<td>
+									<%= order.shippingAddress.addressLineOne %>
+								</td>
+							</tr>
+							<tr>
+								<td>Address Line Two</td>
+								<td>
+									<%= order.shippingAddress.addressLineTwo %>
+								</td>
+							</tr>
+							<tr>
+								<td>State</td>
+								<td>
+									<%= order.shippingAddress.state %>
+								</td>
+							</tr>
+							<tr>
+								<td>City</td>
+								<td>
+									<%= order.shippingAddress.city %>
+								</td>
+							</tr>
+							<tr>
+								<td>Pincode</td>
+								<td>
+									<%= order.shippingAddress.pinCode %>
+								</td>
+							</tr>
+							<tr>
+								<td>Country</td>
+								<td>
+									<%= order.shippingAddress.country %>
+								</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+		<div style="margin: 25px 0px;">
+			<p style="font-size: 14px;font-weight: 500;">Manage online payments via your razorpay dashboard</p>
+			<figure class="razorpay-btn">
+				<img src="/static/razorpayLogo.svg" width="150" alt="razorpay">
+			</figure>
+		</div>
+	</div>
+</div>

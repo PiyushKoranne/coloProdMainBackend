@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>U-CMS</title>
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
+		integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+	<link rel="icon" type="images/png" href="/favicon.png">
+	<link rel="stylesheet" href="/style.css">
+	<link rel="stylesheet" href="/responsive.css">
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Lato:wght@100;300;400;700;900&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/codemirror.min.css">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css">
+	<link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+	<script src="https://code.jquery.com/jquery-2.2.4.min.js" integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44=" crossorigin="anonymous"></script>
+  
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+		integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+		crossorigin="anonymous"></script>
+	<script src="/ckeditor/ckeditor.js"></script>
+	<script src="https://kit.fontawesome.com/e1dea6157c.js" crossorigin="anonymous"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/2.10.2/umd/popper.min.js"
+		integrity="sha512-nnzkI2u2Dy6HMnzMIkh7CPd1KX445z38XIu4jG1jGw7x5tSL3VBjE44dY4ihMU1ijAQV930SPM12cCFrB18sVw=="
+		crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+	<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/codemirror.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/mode/javascript/javascript.min.js"></script>
+	
+</head>
+
+<script>
+	// function checkLoginStatus() {
+	// 	console.log("checking login status...");
+	// 	fetch("/api/v1/manage/auth/check-login-status")
+	// 	.then(res => res.json())
+	// 	.then(data => {
+	// 		console.log(window.location.href, '==========', data);
+	// 		if(window.location.pathname == '/api/v1/manage/auth/') return;
+	// 		if(!data?.success){
+	// 			window.location.href = '/api/v1/manage/auth/'
+	// 		}
+	// 	})
+
+	// }
+	// checkLoginStatus();
+
+	let currentThemeName;
+
+	function fetchThemename() {
+		fetch('/api/v1/manage/fetch-theme-name')
+			.then(response => response.json())
+			.then(data => {
+				currentThemeName = data.themeName;
+				document.body.classList.add(currentThemeName);
+				updateThemeClass();
+			})
+			.catch(error => {
+				console.error('Error fetching themeName:', error);
+			});
+	}
+
+	// logics for notifcations  
+
+	let numberOfQuotations;
+	function fetchQuotationNotifications() {
+		fetch('/api/v1/manage/get-quotations-notification')
+			.then(response => response.json())
+			.then((data) => {
+				numberOfQuotations = data;
+				if (numberOfQuotations < 10) {
+					numberOfQuotations = '0' + numberOfQuotations;
+				}
+				updateQuotationNotification();
+			})
+			.catch(error => console.error('Error fetching data:', error));
+	}
+	function updateQuotationNotification() {
+		let notificationElement = document.getElementById('quotation-notifications');
+		if (numberOfQuotations == 0) {
+			notificationElement.style.display = 'none';
+		} else {
+			notificationElement.style.display = 'inline-block';
+			notificationElement.innerText = numberOfQuotations;
+		}
+	}
+
+
+	let numberOfCallbackRequests;
+	function fetchCallBackNotifications() {
+		fetch('/api/v1/manage/get-callback-request-notification')
+			.then(response => response.json())
+			.then((data) => {
+				numberOfCallbackRequests = data;
+				if (numberOfCallbackRequests < 10) {
+					numberOfCallbackRequests = '0' + numberOfCallbackRequests;
+				}
+				updateCallBackNotification();
+			})
+			.catch(error => console.error('Error fetching data:', error));
+	}
+	function updateCallBackNotification() {
+		let notificationElement = document.getElementById('callback-notifications');
+		if (numberOfCallbackRequests == 0) {
+			notificationElement.style.display = 'none';
+		} else {
+			notificationElement.style.display = 'inline-block';
+			notificationElement.innerText = numberOfCallbackRequests;
+		}
+	}
+
+	let numberOfReviewNotifications;
+	function fetchReviewNotifications() {
+		fetch('/api/v1/manage/get-reviews-notification')
+			.then(response => response.json())
+			.then((data) => {
+				numberOfReviewNotifications = data;
+				if (numberOfReviewNotifications < 10) {
+					numberOfReviewNotifications = '0' + numberOfReviewNotifications;
+				}
+				updateReviewNotification();
+			})
+			.catch(error => console.error('Error fetching data:', error));
+	}
+	function updateReviewNotification() {
+		let notificationElement = document.getElementById('review-notifications');
+		if (numberOfReviewNotifications == 0) {
+			notificationElement.style.display = 'none';
+		} else {
+			notificationElement.style.display = 'inline-block';
+			notificationElement.innerText = numberOfReviewNotifications;
+		}
+	}
+
+	let numberOfOrderNotifications;
+	function fetchOrderNotifications() {
+		fetch('/api/v1/manage/get-order-notification')
+			.then(response => response.json())
+			.then((data) => {
+				numberOfOrderNotifications = data;
+				if (numberOfOrderNotifications < 10) {
+					numberOfOrderNotifications = '0' + numberOfOrderNotifications;
+				}
+				updateOrderNotification();
+			})
+			.catch(error => console.error('Error fetching data:', error));
+	}
+	function updateOrderNotification() {
+		let notificationElement = document.getElementById('orders-notifications');
+		if (numberOfOrderNotifications == 0) {
+			notificationElement.style.display = 'none';
+		} else {
+			notificationElement.style.display = 'inline-block';
+			notificationElement.innerText = numberOfOrderNotifications;
+		}
+	}
+
+
+
+	// logics for notifcations  
+
+
+	function updateThemeClass() {
+		const mainSidebarElement = document.getElementById('main-sidebar');
+		const mainHeaderStrip = document.getElementById('header-strip')
+		if (mainSidebarElement) {
+			mainSidebarElement.classList.add(currentThemeName);
+			mainHeaderStrip.classList.add(currentThemeName);
+		}
+		const secondaryButtons = document.querySelectorAll(".button-secondary-blue");
+		secondaryButtons.forEach(button => button.classList.add(currentThemeName))
+		const mainButtons = document.querySelectorAll(".button-main");
+		mainButtons.forEach(button => button.classList.add(currentThemeName));
+		const menuTitleListItems = document.querySelectorAll(".menu-title-list li");
+		menuTitleListItems.forEach(item => item.classList.add(currentThemeName));
+		const messageboxes = document.querySelectorAll(".msg");
+		messageboxes.forEach(msg => msg.classList.add(currentThemeName));
+		const dropdowns = document.querySelectorAll(".header-strip .dropdown ul");
+		dropdowns.forEach(item => item.classList.add(currentThemeName));
+		document.querySelector("#hero-icon")?.classList.add(currentThemeName);
+		document.querySelector('.wcms__about-content')?.classList.add(currentThemeName);
+		document.querySelector(".wcms__support-top-bar")?.classList.add(currentThemeName);
+		document.querySelector(".wcms__support-banner")?.classList.add(currentThemeName);
+	}
+
+	window.onload = function () {
+		fetchThemename();
+		fetchQuotationNotifications();
+		fetchCallBackNotifications();
+		fetchReviewNotifications();
+		fetchOrderNotifications();
+	};
+</script>
+
+<body class="doc-body" style="height: 100% !important;">
+	<!--Main Navigation-->
+	<style>
+		body,
+		html {
+			height: 100%;
+			margin: 0;
+			overflow: hidden;
+		}
+
+		.menu-title-item {
+			transition: all 400ms ease;
+		}
+
+		.menu-title-item .menu-title-list li {
+			transition: all 400ms ease;
+		}
+
+		.eeEjFz {
+			border: 0.5px solid rgb(50, 51, 54);
+			flex: 0 0 auto;
+			order: 3;
+			align-self: stretch;
+			-webkit-box-flex: 0;
+			margin: 18px 0px;
+		}
+
+		.cmn-outline-btn {
+			border: 1px solid #72AEE6;
+			color: #72AEE6;
+			background-color: transparent;
+			width: 100px;
+			padding: 5px 10px;
+		}
+	</style>
+	<header style="height: 35px">
+		<div id="header-strip" class="header-strip"
+			style="display: flex;align-items: center;justify-content: space-between;gap: 10px;padding: 8px;height: 35px;">
+			<div style="display: flex;align-items: center;gap: 10px;" class="header-res-cont">
+				<div id="hero-icon" class="dropdown hover-dropdown">
+					<i class="fa-solid fa-shield-halved dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"
+						style="cursor: pointer;"></i>
+					<ul class="dropdown-menu">
+						<li><a class="dropdown-item" href="/api/v1/manage/about">About</a></li>
+						<li><a class="dropdown-item" href="/api/v1/manage/guide">Guides</a></li>
+						<li><a class="dropdown-item" href="/api/v1/manage/documentation">Documentation</a></li>
+						<li><a class="dropdown-item" href="/api/v1/manage/support">Support</a></li>
+						<li><a class="dropdown-item" href="/api/v1/manage/feedback">Feedback</a></li>
+					</ul>
+				</div>
+				<div id="hero-icon" class="dropdown hover-dropdown">
+					<p id="website-name-hldr" class="dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"
+						style="font-weight: 600;font-size: 13px;margin: 0px;margin: 0px 10px 0px 10px;cursor: pointer;width: 165px;display: flex;align-items: center;gap: 5px;">
+						<i class="fa-solid fa-house-chimney"></i> Website Name</p>
+					<ul class="dropdown-menu">
+						<li><a id="website-url-hldr" class="dropdown-item" href="#">Visit Site</a></li>
+					</ul>
+				</div>
+				<p class="to-be-hidden" style="font-weight: 600;font-size: 13px;margin: 0px;margin-right: 10px;"><i
+						style="margin-right: 10px;" class="fa-solid fa-rotate"></i> 17 </p>
+				<div id="hero-icon" class="dropdown hover-dropdown">
+					<p class="dropdown-toggle to-be-hidden" data-bs-toggle="dropdown" aria-expanded="false"
+						style="font-weight: 600;font-size: 13px;margin: 0px;cursor: pointer;"><i style="margin-right: 10px;"
+							class="fa-solid fa-plus"></i> New</p>
+					<ul class="dropdown-menu">
+						<li><a class="dropdown-item" href="/api/v1/manage/render-add-post-type">Post Type</a></li>
+						<li><a class="dropdown-item" href="/api/v1/manage/add-new-page">Page</a></li>
+						<li><a class="dropdown-item" href="/api/v1/manage/add-new-model">Custom Field</a></li>
+						<li><a class="dropdown-item" href="#">Media</a></li>
+					</ul>
+				</div>
+			</div>
+			<div class="dropdown sidebar-toggle-btn-wr">
+				<button id="dropdown-username-btn" class="dropdown-toggle"
+					style="height: 25px; font-size: 13px;background-color: transparent;border: none;outline: none;" type="button"
+					data-bs-toggle="dropdown" aria-expanded="false">
+					Howdy Admin! <img class="avatar-profile" src="/static/avatar_placeholder.jpg" width="17px"
+						alt="avatar">
+				</button>
+				<button type="button" class="toggle" id="sidebar-toggle-btn">
+					<span id="sidebar-toggle-btn-child"></span>
+				</button>
+				<ul class="dropdown-menu" style="width: 275px;padding: 0px;">
+					<li style="display: flex;align-items: start;justify-content: flex-start;padding: 10px;gap: 10px;">
+						<figure style="margin: 0px;">
+							<img class="avatar-profile" src="/static/avatar_placeholder.jpg" width="90px" alt="avatar">
+						</figure>
+						<div style="display: flex;align-items: flex-start;flex-direction: column;padding: 10px;">
+							<p id="username-blk" style="font-size: 13px;cursor: pointer;margin: 0px;font-weight: 600;">User Name <span
+									style="display: block;"><a style="font-size: 11px; color: #e5e5e5;" href="#">visit website</a></span>
+							</p>
+							<p style="font-size: 13px;cursor: pointer;margin: 0px;margin-top: 15px;"><a style="color: #e5e5e5;"
+									href="/api/v1/manage/change-theme">Settings</a></p>
+							<p style="font-size: 13px;cursor: pointer;margin: 5px 0px 0px 0px;"><a style="color: #e5e5e5;"
+									onclick="handleLogout()">Sign Out</a></p>
+						</div>
+					</li>
+
+				</ul>
+			</div>
+		</div>
+	</header>
+	<main style="display: flex;height: calc(100% - 35px);">
+		<!-- Sidebar -->
+		<div id="main-sidebar" class="flex-shrink-0 main-sidebar collapsible-sidebar">
+			<ul class="list-unstyled ps-0">
+				<!-- <li class="mb-1">
+					<div class="menu-title-item align-items-center "
+						style="width: 100%; padding:5px 12px ;  font-size: 13px;line-height: 22px;font-weight: 600;text-transform: uppercase;letter-spacing: 0.5px;text-align: center;"
+						data-bs-toggle="collapse">
+						Dashboard <i style="color: #f0f0f1;margin-left: 10px; " class="fa-solid fa-bolt"></i>
+					</div>
+				</li> -->
+				<li class="mb-1">
+					<a id="all-pages-link" class="for-dashboard-text" href="/api/v1/manage/dashboard"
+						style="padding: 8px 0px 8px 12px;font-size:	 13px;line-height: 1.25rem;font-weight: 400;width: 100%;display: inline-block;text-transform: uppercase;">
+						Dashboard
+					</a>
+				</li>
+				<li class="mb-1">
+					<div class="menu-title-item align-items-center collapsed "
+						style="width: 100%; padding:5px 12px ;  font-size: 11px;line-height: 22px;font-weight: 600;text-transform: uppercase;letter-spacing: 0.5px;"
+						data-bs-toggle="collapse" data-bs-target="#home-collapse" aria-expanded="true">
+						Pages
+					</div>
+					<div class="collapse show" id="home-collapse">
+						<ul class="menu-title-list btn-toggle-nav list-unstyled fw-normal  small">
+							<li>
+								<a id="all-pages-link" href="/api/v1/manage/all-pages"
+									style="padding: 8px 0px 8px 12px;font-size: 13px;line-height: 1.25rem;font-weight: 400;width: 100%;display: inline-block;"><i
+										class="fa-solid fa-copy" style="margin-right: 10px;"></i>All Pages</a>
+							</li>
+							<li>
+								<a id="all-pages-link" href="/api/v1/manage/add-new-page"
+									style="padding: 8px 0px 8px 12px;font-size: 13px;line-height: 1.25rem;font-weight: 400;width: 100%;display: inline-block;"><i
+										class="fa-solid fa-plus" style="margin-right: 10px;"></i> Add New Page</a>
+							</li>
+						</ul>
+					</div>
+				</li>
+
+
+				<!-- HRASHIKESH CODE CHANGES MERGE :: END -->
+
+				<!-- <div class="Divider__StyledDivider-sc-1vy16c4-0 eeEjFz"></div> -->
+				<li class="mb-1">
+					<div class="menu-title-item align-items-center collapsed "
+						style="width: 100%; padding:5px 12px ;  font-size: 11px;line-height: 22px;font-weight: 600;text-transform: uppercase;letter-spacing: 0.5px;"
+						data-bs-toggle="collapse" data-bs-target="#acf-collapse" aria-expanded="true">
+						Custom Pages
+					</div>
+					<div class="collapse show" id="acf-collapse">
+						<ul id="model-ul-list" class="menu-title-list btn-toggle-nav list-unstyled fw-normal  small">
+							<li><a id="all-pages-link" href="/api/v1/manage/render-orders-manager"
+									style="padding: 8px 0px 8px 12px;font-size: 13px;line-height: 1.25rem;font-weight: 400; width: 100%;display: inline-block;"><i
+										class="fa-solid fa-syringe" style="margin-right: 10px;"></i>All Orders</a></li>
+							<li><a id="all-pages-link" href="/api/v1/manage/render-all-providers"
+									style="padding: 8px 0px 8px 12px;font-size: 13px;line-height: 1.25rem;font-weight: 400; width: 100%;display: inline-block;"><i
+										class="fa-solid fa-user-tie" style="margin-right: 10px;"></i>Manage Providers</a></li>
+							<li><a id="all-pages-link" href="/api/v1/manage/render-independent-orders"
+									style="padding: 8px 0px 8px 12px;font-size: 13px;line-height: 1.25rem;font-weight: 400; width: 100%;display: inline-block;"><i
+										class="fa-solid fa-vial-circle-check" style="margin-right: 10px;"></i>View Independent Orders</a></li>
+							<li><a id="all-pages-link" href="/api/v1/manage/render-independent-orders"
+									style="padding: 8px 0px 8px 12px;font-size: 13px;line-height: 1.25rem;font-weight: 400; width: 100%;display: inline-block;"><i
+										class="fa-solid fa-dollar-sign" style="margin-right: 10px;"></i>Manage Invoiced Payments</a></li>
+						</ul>
+					</div>
+				</li>
+				<!-- <div class="Divider__StyledDivider-sc-1vy16c4-0 eeEjFz"></div> -->
+				<li class="mb-1">
+					<div class="menu-title-item align-items-center collapsed "
+						style="width: 100%; padding:5px 12px ;  font-size: 11px;line-height: 22px;font-weight: 600;text-transform: uppercase;letter-spacing: 0.5px;"
+						data-bs-toggle="collapse" data-bs-target="#acf-collapse" aria-expanded="true">
+						ACF
+					</div>
+					<div class="collapse show" id="acf-collapse">
+						<ul id="model-ul-list" class="menu-title-list btn-toggle-nav list-unstyled fw-normal  small">
+							<li><a id="all-pages-link" href="/api/v1/manage/all-models"
+									style="padding: 8px 0px 8px 12px;font-size: 13px;line-height: 1.25rem;font-weight: 400; width: 100%;display: inline-block;"><i
+										class="fa-solid fa-shapes" style="margin-right: 10px;"></i>All
+									Custom Fields</a></li>
+							<li id="add-new-model-li"><a id="all-pages-link" href="/api/v1/manage/add-new-model"
+									style="padding: 8px 0px 8px 12px;font-size: 13px;line-height: 1.25rem;font-weight: 400;width: 100%;display: inline-block;"><i
+										class="fa-solid fa-plus" style="margin-right: 10px;"></i>Add New</a></li>
+						</ul>
+					</div>
+				</li>
+				<!-- <div class="Divider__StyledDivider-sc-1vy16c4-0 eeEjFz"></div> -->
+				<li class="mb-1">
+					<div class="menu-title-item align-items-center collapsed "
+						style="width: 100%; padding:5px 12px ;  font-size: 11px;line-height: 22px;font-weight: 600;text-transform: uppercase;letter-spacing: 0.5px;"
+						data-bs-toggle="collapse" data-bs-target="#post-types-collapse" aria-expanded="true">
+						Post Types
+					</div>
+					<div class="collapse show" id="post-types-collapse">
+						<ul id="post-type-ul" class="menu-title-list btn-toggle-nav list-unstyled fw-normal  small">
+							<li><a id="all-pages-link" href="/api/v1/manage/render-all-post-types"
+									style="padding: 8px 0px 8px 12px;font-size: 13px;line-height: 1.25rem;font-weight: 400;width: 100%;display: inline-block;"><i
+										class="fa-solid fa-table-list" style="margin-right: 10px;"></i>All Post Types</a></li>
+							<li id="add-new-post-type-li">
+								<a id="all-pages-link" href="/api/v1/manage/render-add-post-type"
+									style="padding: 8px 0px 8px 12px;font-size: 13px;line-height: 1.25rem;font-weight: 400;width: 100%;display: inline-block;">
+									<i class="fa-solid fa-plus" style="margin-right: 10px;"></i>Add Post Type
+								</a>
+							</li>
+							<li>
+								<a id="all-pages-link" href="/api/v1/manage/render-categories-manager"
+									style="padding: 8px 0px 8px 12px;font-size: 13px;line-height: 1.25rem;font-weight: 400;width: 100%;display: inline-block;">
+									<i class="fa-solid fa-circle" style="margin-right: 10px;"></i>Categories
+								</a>
+							</li>
+						</ul>
+					</div>
+				</li>
+			</ul>
+			<div class="credit-strip">
+				<span style="padding: 0 25px;"><em> Thank you for creating with <a href="#"
+							style="color: #92C7CF;font-weight: 600;text-decoration: underline;"> U-CMS</a>.</em></span>
+				<span style="padding: 0 25px;">Version 6.4.3</span>
+			</div>
+		</div>
+
+		<!--Main layout-->
+		<div id="main-content"
+			style="display: flex;align-items: start;justify-content: start;height: 100%; overflow: hidden;">
+			<%- body %>
+		</div>
+
+	</main>
+	<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+	<script>
+		window.addEventListener('beforeunload', function () {
+			// Save the scroll position to localStorage
+			var scrollableContent = document.getElementById('scrollable-content');
+			if (scrollableContent) {
+				localStorage.setItem('mainLayoutScrollPosition', scrollableContent.scrollTop);
+			}
+		});
+
+
+
+		document.addEventListener("DOMContentLoaded", function () {
+			// Get the scroll position from localStorage
+			var savedScrollPosition = localStorage.getItem('mainLayoutScrollPosition');
+
+			// Scroll to the saved position
+			if (savedScrollPosition !== null) {
+				var scrollableContent = document.getElementById('scrollable-content');
+				if (scrollableContent) {
+					scrollableContent.scrollTop = parseInt(savedScrollPosition, 10);
+				}
+			}
+
+			// if (scrollPosition !== null) {
+			// 	window.scrollTo(0, parseInt(scrollPosition));
+			// 	localStorage.removeItem('scrollPosition'); // Optional: Clear the stored scroll position
+			// }
+			// Need to correct this logic to avoid looping infinitely:
+
+			// fetch("/api/v1/manage/auth/check-login-status")
+			// .then(res => res.json())
+			// .then(data => {
+			// 	if(!data?.success){
+			// 		window.location.href = '/api/v1/manage/auth'
+			// 	}
+			// })
+
+			function setActiveLink() {
+				var links = document.querySelectorAll(".menu-title-list li a");
+				var currentURL = window.location.href;
+				links.forEach(function (link) {
+					var linkURL = link.getAttribute("href");
+					liElement = link.closest("li");
+					if (currentURL.includes(linkURL)) {
+						liElement.classList.add("active");
+					} else {
+						liElement.classList.remove("active");
+					}
+				});
+			}
+
+			function navigateTo(url) {
+				window.location.href = url;
+			}
+
+			fetch("/api/v1/manage/all-model-names-and-links").then(res => res.json()).then(data => {
+				const modelList = document.getElementById("model-ul-list");
+				const lastLi = document.getElementById("add-new-model-li");
+				data?.data?.forEach(item => {
+					const newLi = document.createElement("li");
+					newLi.innerHTML = `<a id="all-pages-link" href="/api/v1/manage/rendermodel?modelname=${item?._id}"
+										class="side-menu-link"><i
+											class="fa-solid fa-thumbtack" style="margin-right: 10px;"></i>${item?.modelName}</a>`;
+					modelList.insertBefore(newLi, lastLi)
+				})
+				setActiveLink();
+			});
+
+			fetch("/api/v1/manage/get-post-types-and-links")
+				.then(res => res.json())
+				.then(data => {
+					const postTypeList = document.getElementById("post-type-ul");
+					const lastLi = document.getElementById("add-new-post-type-li");
+					data?.data?.forEach(item => {
+						const newLi = document.createElement("li");
+						newLi.innerHTML = `<a id="all-pages-link" href="/api/v1/manage/show-posts-by-post-type/${encodeURIComponent(item?._id)}"
+										class="side-menu-link"><i
+											class="fa-solid fa-thumbtack" style="margin-right: 10px;"></i>${item?.postTypeName}</a>`;
+						postTypeList.insertBefore(newLi, lastLi)
+					})
+					setActiveLink();
+				})
+
+			fetch("/api/v1/manage/get-user-data").then(res => res.json()).then(data => {
+				console.log("GETTNG USER DATA::", data);
+				if (data?.userData) {
+					const usernameElement = document.querySelector("#username-blk");
+					usernameElement.innerHTML = `${data?.userData?.username} <span style="display: block"><a style="font-size: 11px; color: #e5e5e5;" href="${data?.userData?.websiteUrl}">${data?.userData?.websiteName}</a></span>`;
+
+					const usernameDropDown = document.querySelector("#dropdown-username-btn");
+					usernameDropDown.innerHTML = `Howdy, ${data?.userData?.username} <img src="/images/${data?.userData?.profileImage}" width="17px" alt="avatar">`;
+
+					const pics = document.querySelectorAll(".avatar-profile");
+					pics.forEach(item => {
+						if (data?.userData?.profileImage) {
+							item.setAttribute('src', `/images/${data?.userData?.profileImage}`)
+						}
+					})
+				}
+				if (data?.userData?.websiteName) {
+					const element = document.querySelector("#website-name-hldr");
+					element.innerHTML = `<i class="fa-solid fa-house-chimney"></i> <span style="display:inline-block;width:120px;text-overflow:ellipsis;overflow:hidden; white-space: nowrap;">${data?.userData?.websiteName}</span> <i class="fa-solid fa-pen hover-appear" style="margin-left:5px;font-size:13px;" onclick="openAddWebsiteModal()"></i>`
+					const urlElement = document.querySelector("#website-url-hldr");
+					urlElement.setAttribute("href", data?.userData?.websiteUrl?.indexOf("https://") !== -1 ? data?.userData?.websiteUrl : data?.userData?.websiteUrl?.indexOf("http://") !== -1 ? data?.userData?.websiteUrl : 'https://' + data?.userData?.websiteUrl)
+
+				} else {
+					const element = document.querySelector("#website-name-hldr");
+					element.innerHTML = `<i class="fa-solid fa-plus"></i> Add Website`
+					element.addEventListener('click', () => {
+						openAddWebsiteModal();
+					});
+				}
+			})
+		});
+
+		function openAddWebsiteModal() {
+			window.location.href = "/api/v1/manage/add-project";
+		}
+
+		function handleLogout() {
+			fetch("/api/v1/manage/auth/admin-logout")
+				.then(res => res.json())
+				.then(data => {
+					if (data?.success && data?.message == 'logged out') {
+						window.location.replace('/api/v1/manage/auth');
+					}
+				})
+		}
+		$(document).ready(function () {
+			// Enable Bootstrap dropdown on hover
+			$('.hover-dropdown').hover(function () {
+				$(this).addClass('show');
+				$(this).find('.dropdown-menu').addClass('show');
+			}, function () {
+				$(this).removeClass('show');
+				$(this).find('.dropdown-menu').removeClass('show');
+			});
+
+			const sidebar = document.getElementById('main-sidebar');
+			const content = document.getElementById('main-content')
+			const toggleButton = document.getElementById('sidebar-toggle-btn');
+			const toggleButtonChild = document.getElementById('sidebar-toggle-btn-child');
+
+
+			// Add click event listener to the toggle button
+			toggleButton.addEventListener('click', function () {
+				sidebar.classList.toggle('collapsed');
+				content.classList.toggle('collapsed')
+				toggleButtonChild.classList.toggle('toggle')
+			});
+		});
+	</script>
+</body>
+
+</html>

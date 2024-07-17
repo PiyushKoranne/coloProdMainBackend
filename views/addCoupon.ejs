@@ -1,0 +1,331 @@
+<div style="width: 100%; height: 100%;background-color: #f0f0f1;display: flex;align-items:flex-start; ">
+
+
+    <form id="couponForm" action="/api/v1/manage/add-coupon" enctype="multipart/form-data" method="POST" style="width: 36%;padding: 15px;display: flex;flex-direction: column;height: 93vh;border-right: 1px dashed rgba(0,0,0,0.25); overflow: auto;">
+        <h5 style="font-weight: 600; font-size: 13px; text-transform: uppercase;margin-bottom: 5px;padding-bottom: 5px;">
+        Add new Coupon</h5>
+        <label class="mt-2" for="" style="text-transform: capitalize;margin-bottom: 5px;" >Coupon Code:</label>
+        <input type="text" class="form-control" style="border: 1px solid rgba(0,0,0,0.2);" id="couponCode" name="couponCode" >
+        <span style="color: rgba(0,0,0,0.7);font-size: 13px;font-weight: 500;">The name is how it appears on the site.</span>
+        
+        <label class="mt-3" for="" style="text-transform: capitalize;margin-bottom: 5px;" >Coupon Id:</label>
+        <input type="text" class="form-control" style="border: 1px solid rgba(0,0,0,0.2);" name="couponId" id="couponId">
+        <button type="button" onclick="generateCouponId()" class="mb-3 button-secondary" style="margin-top: 5px;" >Auto-generate Unique Coupon Id</button>
+        <span style="color: rgba(0,0,0,0.7);font-size: 13px;font-weight: 500;">Categories have a hierarchy. You might have a Jazz category and under that have children categories for BeBop and Big Band. Totally optional.</span>
+      
+        <label class="mt-3" for="" style="text-transform: capitalize;margin-bottom: 5px;" >Coupon Type:</label>
+        <select name="couponType" id="couponType" class="form-select">
+            <option value="">Select Coupon Type</option>
+            <option value="Percentage">Percentage</option>
+            <option value="Amount">Amount</option>
+        </select>
+          
+        <label class="mt-3" for="" style="text-transform: capitalize;margin-bottom: 5px;" >Coupon Discount (%):</label>
+        <input type="number" class="form-control" style="border: 1px solid rgba(0,0,0,0.2);" id="couponDiscount" name="couponDiscount" >
+
+        <label class="mt-3" for="" style="text-transform: capitalize;margin-bottom: 5px;" >Maximum Discount Amount (Rs.):</label>
+        <input type="number" class="form-control" style="border: 1px solid rgba(0,0,0,0.2);" id="maximumAllowedDiscount" name="maximumAllowedDiscount" >
+
+        <p class="mt-3 mb-3" style="text-transform: uppercase;margin-bottom: 5px; font-size: 14px;">Coupon Conditions: </p>
+
+        <label for="" style="text-transform: capitalize;margin-bottom: 5px;" >Coupon Brand</label>
+        <div id="chosen-brands-display2" style="display: flex; align-items: center;flex-wrap: wrap;margin: 10px 0px; gap: 10px;"></div>
+        <button type="button" class="button-secondary" onclick="openBrandSelectionModal(this)">Select Brand</button>
+
+        <label for="" style="text-transform: capitalize;margin-bottom: 5px;" >Minimum Number of Products</label>
+        <input type="number" name="minimumNumberOfProducts" class="form-control" style="border: 1px solid rgba(0,0,0,0.2);">
+        
+        <label for="" style="text-transform: capitalize;margin-bottom: 5px;" >Specific Products:</label>
+        <div id="chosen-products-display2" style="display: flex; align-items: center;flex-wrap: wrap;margin: 10px 0px; gap: 10px;"></div>
+        <button type="button" class="button-secondary" onclick="openProductSelectionModal(this)">Select Products</button>
+
+
+        <label class="mt-3" for="" style="text-transform: capitalize;margin-bottom: 5px;" >Coupon Image:</label>
+        <div class="file-upload" style="display: flex;flex-direction: column;align-items: center;">
+            <div class="drop-zone">
+            </div>
+            <input type="file" name="couponImage" class="file-input" onchange="previewImage(event)">
+        </div>
+       
+        <label class="mt-3" for="" style="text-transform: capitalize;margin-bottom: 5px;" >Coupon Description:</label>
+        <div>
+            <textarea name="couponDescription" id="couponDescription" cols="30" rows="5" style="border: 1px solid rgba(0,0,0,0.2);width: 100%;resize: none;"></textarea>
+        </div>
+        <span style="color: rgba(0,0,0,0.7);font-size: 13px;font-weight: 500;">The description of a category is not prominent by default and can be used for user's convenience.</span>
+
+        <button class="button-main button-main-md" type="submit" style="border-radius: 2px;margin-top: 10px;">Add New Coupon</button>
+        
+    </form>
+
+    <!-- START MODALS -->
+
+    <!-- MODAL FOR CHOOSING COUPON BRAND -->
+    <div id="couponBrandModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closecouponBrandModal()">&times;</span>
+            <div style="padding: 20px 0;">
+                <label class="pb-2" for="buttonTitle">Brand:</label>
+                <div id="chosen-brands-display" style="display: flex; align-items: center;flex-wrap: wrap;margin: 10px 0px; gap: 10px;"></div>
+                <select class="form-select" name="brands" id="brands">
+                    <option value="">Choose a brand</option>
+                    <% for(let brand of brands) { %>
+                        <option value="<%= brand.postData?.brandName %>"><%= brand.postData?.brandName %></option>
+                    <% } %>
+                </select>
+                <button class="mt-3 button-main button-main-md" onclick="chooseCouponBrand()">Add / Update</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="couponProductModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closecouponProductModal()">&times;</span>
+            <div style="padding: 20px 0;">
+                <label class="pb-2" for="buttonTitle">Brand:</label>
+                <div id="chosen-products-display" style="display: flex; align-items: center;flex-wrap: wrap;margin: 10px 0px; gap: 10px;"></div>
+                <select class="form-select" name="products" id="products">
+                    <option value="">Choose a product</option>
+                    <% for(let product of products) { %>
+                        <option value="<%= product._id +'_&&&&_' + product.postData?.name %>"><%= product.postData?.name %></option>
+                    <% } %>
+                </select>
+                <button class="mt-3 button-main button-main-md" onclick="chooseCouponProduct()">Add / Update</button>
+            </div>
+        </div>
+    </div>  
+
+    <!-- END MODALS -->
+
+
+    <div style="position: relative;height: 93vh;width: 60%;margin: 0 auto;">
+
+    <div style="display: flex;width: 100%;padding: 15px; gap: 25px;">
+        <div style="width: 100%;padding: 20px;background-color: #fff;height: fit-content;">
+            <div style="background-color: #D1FAE5; border-radius: 6px; padding: 10px; margin-top: 15px;">
+                    <h6 style="color: #10B981; font-weight: bold; letter-spacing: 2px; line-height: 20px; display: flex; align-items: center; margin-bottom: 10px; gap: 5px;">
+                        <i style="font-size: 22px; line-height: 20px;" class='bx bxs-award'></i> <span id="couponCodePlaceholder">Upsrct</span>
+                    </h6>
+                    <p style="color: #047857; font-size: 13px; line-height: 18px; margin-top: 5px; padding-left: 30px; padding-right: 30px;">Coupon Applied: <span id="couponDescriptionPlaceholder">Save up to Rs 250 on Buy 2 Amaron Battries.</span></p>
+                    <div style="text-align: right;">
+                        <button  style="color: #e42b5c; font-weight: 600; border: none; background-color: transparent;" >Remove</button>
+                    </div>
+                </div>
+	    </div>
+
+        <div class="offers-cards-wr">
+            <div>
+                <figure style="position: relative;">
+                    <img id="imagePreview" style="z-index: 2; max-width: 100%; display: none;position: relative;" alt="Image Preview"/>
+                    <span style="z-index: 1;color: #8b8b8b;top: 50%;left: 10%;position: absolute;transform: rotate(329deg);">PLEASE SELECT IMAGE TO SEE PREVIEW</span>
+                </figure>
+                <div class="offer-card-content-wr">
+                    <h4 id="couponDescriptionPlaceholderSecond">Save up to Rs 250 on Buy 2 Amaron Battries</h4>
+                    <span>Use Code <span id="couponCodePlaceholderSecond"> Upsrct</span></span>
+                </div>
+            </div>
+    </div>
+</div>
+
+<div style=" background-color: #fff;padding: 15px;position: absolute;bottom: 0;font-weight: 400;color: #636261;padding: 15px;font-style: italic;border: 1px dashed rgba(0,0,0,0.25);border-bottom: 0;font-size: 13px;">
+    <p style="margin: 0;">
+        Coupon Management for Batteries. Now, admins can easily create and manage discounts for battery purchases. Streamline your promotional efforts and efficiently offer various discounts on battery products. Simplify your administrative tasks and enhance your marketing strategies with our Coupon Management feature.
+        <span style="font-weight: bold;color: #000;"> ~U-CMS</span></p>
+</div>
+
+
+</div>
+
+
+
+
+</div>
+
+<script>
+
+    function openBrandSelectionModal(element) {
+        document.getElementById('couponBrandModal').style.display = 'block';
+    }
+
+    function closecouponBrandModal() {
+        document.getElementById('couponBrandModal').style.display = 'none';
+    }
+
+    function openProductSelectionModal(element) {
+        document.getElementById('couponProductModal').style.display = 'block';
+    }
+
+    function closecouponProductModal() {
+        document.getElementById('couponProductModal').style.display = 'none';
+    }
+
+
+
+    function chooseCouponBrand() {
+        const selectionElem = document.getElementById('brands');
+        if(selectionElem.value === "") return;
+        console.log("SELECT VAL:", selectionElem.value);
+        const form = document.getElementById('couponForm');
+        const inputElem = document.createElement('input');
+        // inputElem.value = selectionElem.value;
+        inputElem.setAttribute('value', selectionElem.value);
+        inputElem.setAttribute('name', 'couponBrand');
+        inputElem.hidden = true;
+        form.appendChild(inputElem);
+        // more work on deleting a couponBrand is pending
+        const brandTag = document.createElement('span');
+        brandTag.style.display = 'block';
+        brandTag.style.backgroundColor = 'aliceblue';
+        brandTag.style.fontSize = '14px';
+        brandTag.style.padding = '5px 10px';
+        brandTag.style.borderRadius = '6px';
+        brandTag.style.border = '1px solid rgba(0,0,0,0.2)';
+        brandTag.textContent = selectionElem.value;
+        document.getElementById('chosen-brands-display').appendChild(brandTag);
+        document.getElementById('chosen-brands-display2').appendChild(brandTag);
+    }
+
+    function chooseCouponProduct() {
+        const selectionElem = document.getElementById('products');
+        if(selectionElem.value === "") return;
+        console.log("SELECT VAL:", selectionElem.value);
+        const form = document.getElementById('couponForm');
+        const inputElem = document.createElement('input');
+        // inputElem.value = selectionElem.value;
+        inputElem.setAttribute('value', selectionElem.value?.split('_&&&&_')[0]);
+        inputElem.setAttribute('name', 'couponProduct');
+        inputElem.hidden = true;
+        form.appendChild(inputElem);
+        // more work on deleting a couponBrand is pending
+        const brandTag = document.createElement('span');
+        brandTag.style.display = 'block';
+        brandTag.style.backgroundColor = 'aliceblue';
+        brandTag.style.fontSize = '14px';
+        brandTag.style.padding = '5px 10px';
+        brandTag.style.borderRadius = '6px';
+        brandTag.style.border = '1px solid rgba(0,0,0,0.2)';
+        brandTag.textContent = selectionElem.value?.split('_&&&&_')[1];
+        document.getElementById('chosen-products-display').appendChild(brandTag);
+        document.getElementById('chosen-products-display2').appendChild(brandTag);
+    }
+
+
+
+    function generateCouponId() {
+        
+        const postTypeName = document.getElementById("couponCode").value;
+        const slugElement = document.getElementById("couponId");
+        if(!postTypeName) return slugElement.value ="";
+        const dt = new Date();
+        const mil = "__"+dt.getTime();
+        const slug = "crp__"+postTypeName.toLowerCase()?.split(" ").join("")+mil;
+        slugElement.value = slug;
+    }
+
+    // JavaScript state management for real-time updates
+    document.getElementById('couponCode').addEventListener('input', function(event) {
+        document.getElementById('couponCodePlaceholder').innerText = event.target.value;
+    });
+    document.getElementById('couponCode').addEventListener('input', function(event) {
+        document.getElementById('couponCodePlaceholderSecond').innerText = event.target.value;
+    });
+
+    document.getElementById('couponDescription').addEventListener('input', function(event) {
+        document.getElementById('couponDescriptionPlaceholder').innerText = event.target.value;
+    });
+
+    document.getElementById('couponDescription').addEventListener('input', function(event) {
+        document.getElementById('couponDescriptionPlaceholderSecond').innerText = event.target.value;
+    });
+
+    document.querySelectorAll(".file-upload").forEach((Element) => {
+	const fileInput = Element.querySelector('.file-input');
+	const dropZone = Element.querySelector('.drop-zone');
+	var	isUploaded = false;
+	dropZone.textContent = '+';
+	
+	fileInput.addEventListener('change', function() {
+		const files = fileInput.files;
+		
+		if (files.length > 0) {
+			isUploaded = true;
+			dropZone.classList.add('uploaded');
+			dropZone.textContent = '✓';
+		} else {
+			isUploaded = false;
+			dropZone.classList.remove('uploaded');
+			dropZone.textContent = '+';
+		}
+	});
+
+	//клик на кнопку
+	dropZone.addEventListener('click', function() {
+		fileInput.click();
+	});
+	
+	//курсор наведен на элемент
+	dropZone.addEventListener('mouseenter', function(event) {
+		if (isUploaded)
+			dropZone.textContent = '⭯';
+	});
+	
+	//курсор покинул элемент
+	dropZone.addEventListener('mouseleave', function(event) {
+		if (isUploaded)
+			dropZone.textContent = '✓';
+	});
+
+	//начало перетаскивания файла
+	dropZone.addEventListener('dragstart', function(event) {
+		dropZone.dataTransfer.setData('Files', '');; // Необходимо для Firefox, чтобы элемент был перетаскиваемым
+	});
+
+	//вхождение в зону перетаскивания файла (выполняется 1 раз)
+	dropZone.addEventListener('dragenter', function(event) {
+		if (isUploaded)
+			dropZone.textContent = '⭯';
+		dropZone.classList.add('dragOver');
+	});
+
+	//файл удерживается над зоной перетаскивания
+	dropZone.addEventListener('dragover', function(event) {
+		event.preventDefault();
+	});
+
+	//выход из зоны для перетаскивания файла
+	dropZone.addEventListener('dragleave', function(event) {
+		if (isUploaded)
+			dropZone.textContent = '✓';
+		dropZone.classList.remove('dragOver');
+	});
+
+	//файл сброшен в зону перетаскивания
+	dropZone.addEventListener('drop', function(event) {
+		event.preventDefault();
+		dropZone.classList.remove('dragOver');
+
+		// Присваивание fileInput.files
+		fileInput.files = event.dataTransfer.files;
+
+		// Создание и инициирование события change
+		var changeEvent = new Event('change');
+		fileInput.dispatchEvent(changeEvent);
+	});
+});
+
+function previewImage(event) {
+        const file = event.target.files[0];
+        const imagePreview = document.getElementById('imagePreview');
+        
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                imagePreview.src = e.target.result;
+                imagePreview.style.display = 'block';
+            }
+            reader.readAsDataURL(file);
+        } else {
+            imagePreview.src = '';
+            imagePreview.style.display = 'none';
+        }
+    }
+</script>

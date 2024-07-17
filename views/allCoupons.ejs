@@ -1,0 +1,56 @@
+<style>
+    .edit-coupon:hover i{
+        color: #10B981;
+    }
+    .delete-coupon:hover i{
+        color: #e42b5c;
+    }
+</style>
+<div style="width: 100%; height: 100%;background-color: #f0f0f1;display: flex;align-items:flex-start;overflow-y: scroll;position: relative;">
+        <h3 style="font-size: 18px;font-weight: 500;position: absolute;padding: 15px;text-transform: uppercase;">All Coupons </h3>
+
+<div style="width: 100%; display: flex; flex-wrap: wrap; justify-content: space-around;">
+    <% coupons.forEach(function(coupon) { %>
+        <div style="width: 100%; display: flex; flex-wrap: wrap; justify-content: space-around;gap: 25px; align-items: center;">
+
+        <div style="position: relative;width: 40%; padding: 20px;margin: 1% 0; background-color: #fff;height: fit-content;">
+            <div style="background-color: #D1FAE5; border-radius: 6px; padding: 10px; margin-top: 15px;">
+                <h6 style="color: #10B981; font-weight: bold; letter-spacing: 2px; line-height: 20px; display: flex; align-items: center; margin-bottom: 10px; gap: 5px;">
+                    <i style="font-size: 22px; line-height: 20px;" class='bx bxs-award'></i> <%= coupon.couponCode %>
+                </h6>
+                <p style="color: #047857; font-size: 13px; line-height: 18px; margin-top: 5px; padding-left: 30px; padding-right: 30px;">Coupon Applied: <%= coupon.couponDescription %></p>
+                <div style="text-align: right;">
+                    <button style="color: #e42b5c; font-weight: 600; border: none; background-color: transparent;" >Remove</button>
+                </div>
+            </div>
+            <div style="position: absolute;border: 1px solid rgba(0,0,0,0.2);    left: -6%;
+            top: 34%;
+            padding: 10px 12px;">
+                <span style="display: block;cursor:pointer;"  class="edit-coupon"><a style="color: #000;" href="/api/v1/manage/edit-coupon/<%= coupon._id %>"> <i class="fa-solid fa-pen "></i></a></span>
+                <span style="display: block;cursor:pointer;"  class="delete-coupon"><a style="color: #000;" href="/api/v1/manage/delete-coupon/<%= coupon._id %>"> <i class="fa-solid fa-trash-can "></i></a></span>
+            </div>
+        </div>
+
+
+    <div class="offers-cards-wr">
+        <div>
+            <figure style="position: relative;">
+                <img  style=" max-width: 100%;"src="/images/<%= coupon.couponImage %>"  alt="Image Preview"/>
+            </figure>
+            <div class="offer-card-content-wr">
+                <h4 id="couponDescriptionPlaceholderSecond"><%= coupon.couponDescription %></h4>
+                <span>Use Code <span id="couponCodePlaceholderSecond"> <%= coupon.couponCode %></span></span>
+            </div>
+        </div>
+    </div>
+
+    <% }); %>
+
+
+</div>
+</div>
+
+
+</div>
+
+

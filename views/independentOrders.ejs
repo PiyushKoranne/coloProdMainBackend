@@ -1,0 +1,191 @@
+<div style="width: 100%;height: 100%;padding: 15px; overflow-y: auto;padding-bottom: 50px;">
+	<div style="display: flex;align-items: center;justify-content: space-between;width: 100%;">
+		<div id="all-posts-top-heading" style="width: 100%;">
+			<h1 style="font-size: 18px;font-weight: 500;">
+				Independent Orders 
+			</h1>
+			<div style="display: flex;align-items: center;justify-content: space-between;width: 100%;">
+				<p style="font-size: 13px;margin: 0;"> <a class="nrm-txt" style="font-weight: 400;text-decoration: none;color: #484848;" href="/api/v1/manage/show-posts-by-post-type">All <span style="color: #969696;" >(<%= orders?.length %>)</span></a> </p>
+
+				<div style="display: flex;align-items: center;gap: 5px;">
+					<form action="/api/v1/manage/search-order-by-id" method="post">
+						<input style="padding: 5px;outline: none;border: 1px solid rgba(0,0,0,0.25);" type="text" name="orderId" id="orderId">
+						<button class="button-secondary-blue" style="border-radius: 2px;">Search Orders By Id</button>
+					</form>	
+				</div>
+			</div>
+			
+
+			<div style="display: flex;align-items: center;justify-content: flex-end;width: 100%;padding: 10px 0px;">
+				<div>
+					<nav aria-label="Page navigation example">
+						<ul class="pagination" style="margin: 0;">
+						  <li class="page-item <%= parseInt(currentpage) == 1 ? 'disabled':'' %>"><a class="page-link button-secondary" style="border-radius: 2px;" href="/api/v1/manage/show-posts-by-post-type?currentpage=<%= parseInt(currentpage)-1 %>&paginationtype=<%= paginationtype %>&searchquery=<%= searchquery %>"><span aria-hidden="true">&laquo;</span></a></li>
+
+						  <% for(let i=1; i <= parseInt(numberOfPages); i++) { %>
+							<li class="page-item <%= parseInt(currentpage) == i ? 'active':'' %>"><a class="page-link button-secondary" style="border-radius: 2px;" href="/api/v1/manage/show-posts-by-post-type?currentpage=<%= i %>&paginationtype=<%= paginationtype %>&searchquery=<%= searchquery %>"><span aria-hidden="true"><%= i %></span></a></li>
+						  <% } %>
+
+						  <li class="page-item <%= parseInt(currentpage) == numberOfPages ? 'disabled':'' %>"><a class="page-link button-secondary" style="border-radius: 2px;" href="/api/v1/manage/show-posts-by-post-type?currentpage=<%= parseInt(currentpage)+1 %>&paginationtype=<%= paginationtype %>&searchquery=<%= searchquery %>"><span aria-hidden="true">&raquo;</span></a></li>
+						</ul>
+					</nav>
+				</div>
+			</div>
+			<div class="msg-container">
+				<% message?.forEach(msgItem =>{ %>
+					<div class="msg" style="background-color: <%= msgItem?.success ? '#fff':'#FFB0B03f' %>;">
+						<p style="text-transform:capitalize"><i class="<%= msgItem?.success ? 'fa-regular fa-bell' : 'fa-solid fa-circle-exclamation' %>" style="color:<%= msgItem?.success ? '#484848':'#D04848'  %>"></i><%= msgItem?.message || 'Howdy! Manage your pages here.' %></p>
+						<button class="close-msg-btn" onclick="closeMessage(this)">&times;</button>
+					</div>
+				<% }) %>
+			</div>
+		</div>
+		<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+	</div>
+	<style>
+		tbody tr:nth-child(odd) {
+			background-color: #f6f7f7;
+		}
+
+		tbody tr:nth-child(even) {
+			background-color: #fff;
+		} 
+	</style>
+	
+	<% if(orders?.length> 0) { %>
+		<table width="100%" cellspacing="0" cellpadding="0" style="border: 1px solid rgba(0,0,0,0.25);">
+			<thead style="border-bottom: 2px solid #d8d8d8;background-color: #fff;">
+				<tr>
+					<th>
+						<div style="display: flex; align-items: center; justify-content: start;padding: 10px;">
+							<h3 style="font-size: 14px;margin: 0px;">Order Id</h3>
+						</div>
+					</th>
+					<th>
+						<div style="display: flex; align-items: center; justify-content: start;padding: 10px;">
+							<h3 style="font-size: 14px;margin: 0px;">Name</h3>
+						</div>
+					</th>
+					<th>
+						<div style="display: flex; align-items: center; justify-content: start;">
+							<h3 style="font-size: 14px;margin: 0px;">Email</h3>
+						</div>
+					</th>
+					<th>
+						<div style="display: flex; align-items: center; justify-content: start;">
+							<h3 style="font-size: 14px;margin: 0px;">Phone</h3>
+						</div>
+					</th>
+					<th>
+						<div style="display: flex; align-items: center; justify-content: start;">
+							<h3 style="font-size: 14px;margin: 0px;">Dob</h3>
+						</div>
+					</th>
+					<th>
+						<div style="display: flex; align-items: center; justify-content: start;">
+							<h3 style="font-size: 14px;margin: 0px;">Payment</h3>
+						</div>
+					</th>
+					<th>
+						<div style="display: flex; align-items: center; justify-content: start;">
+							<h3 style="font-size: 14px;margin: 0px;">Actions</h3>
+						</div>
+					</th>
+				</tr>
+			</thead>
+			<tbody>
+
+				<% orders.reverse().forEach(post=> { %>
+					<tr style="border-bottom: 1px solid rgba(0,0,0,0.25);">
+						<td style="padding: 5px 10px;">
+							<div style="font-size: 13px;">
+								<span style="color: #2271B7;font-weight: 500;">
+									<%= post.orderId %>
+								</span>
+							</div>
+						</td>
+						<td style="padding: 5px 10px;">
+							<div style="font-size: 13px;">
+								<span style="font-weight: 400;color: #2271B7;">
+									<%= post.firstName+" "+post.lastName %>
+								</span>
+							</div>
+						</td>
+						<td style="padding: 5px 10px;">
+							<div style="font-size: 13px;">
+								<span style="font-weight: 400;color: #2271B7;">
+									<%= post.email %>
+								</span>
+							</div>
+						</td>
+						<td style="padding: 5px 10px;">
+							<div style="font-size: 13px;">
+								<span style="width: 250px;display: block;">
+									<%= post.phone %>
+								</span>
+							</div>
+						</td>
+						<td style="padding: 5px 10px;">
+							<div style="font-size: 13px;">
+								<span style="font-weight: 500;color: #2271B7;">
+									<%= post.dob %>
+								</span>
+							</div>
+						</td>
+						<td style="padding: 5px 10px;">
+							<div style="font-size: 13px;">
+								<span style="font-weight: 600;color: <%= post.paymentConfirmed === true ? '#65a30d':'#dc2626' %>;">
+									<%= post.paymentConfirmed ? "Confirmed":"Pending" %>
+								</span>
+							</div>
+						</td>
+						
+						<td style="padding: 5px 10px;">
+							<div style="font-size: 13px;">
+								<span style="font-weight: 400;text-transform: capitalize;">
+									<i class="fa-solid fa-eye" onclick="showOrder('<%= post._id %>')" style="font-size: 12px;color: <%= post?.visibility == 'visible' ? '#74DC2E' :'#2271B7' %>;cursor: pointer;"></i>
+								</span>
+							</div>
+						</td>
+					</tr>
+
+					<% }) %>
+			</tbody>
+		</table>
+		<% } else { %>
+			<div class="empty-post-bg"
+				style="display: flex;flex-direction: column; align-items: center;justify-content: center;height: 400px;">
+				<h1 style="color:rgba(0,0,0,0.75);margin-bottom: 25px;font-family: Arial, Helvetica, sans-serif;font-weight: 500;">No independent orders have been placed yet...</h1>
+			</div>
+		<% } %>
+</div>
+<script>
+	function closeMessage(buttonElement) {
+		const container = buttonElement.closest(".msg");
+		container.style.display = 'none';
+		const parent = buttonElement.closest(".msg-container");
+		const children = parent.querySelectorAll(".msg");
+		var visibleCount = 0;
+		for(var i=0; i<children.length; i++){
+			if(window.getComputedStyle(children[i]).display !== none){
+				visibleCount++;
+			}
+		}
+		if(visibleCount === 0){
+			parent.style.display = 'none'
+		}
+	}
+
+	function showOrder(orderId) {
+		window.location.href = `/api/v1/manage/show-provider/${orderId}`;
+	}
+
+	function createNewProvider() {
+		window.location.href = `/api/v1/manage/render-create-new-provider`;
+	}
+
+	function submitForm(selectElement) {
+		const form = selectElement.closest("form")
+        form.submit();
+    }
+</script>

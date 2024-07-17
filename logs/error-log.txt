@@ -1,0 +1,90 @@
+exports.showPosts = async (req, res) => {
+	try {
+		const {currentpage, paginationtype, searchquery, filterdate, filtercategory, published, hidden} = req.query;
+		let numberOfPages;
+		let thisPage;
+		if(currentpage) thisPage = parseInt(currentpage) -1;
+		else thisPage = 0;
+		const dates = getLastTwelveMonths();
+		const posts = await postModel.find({ postType: req.params.posttypeid });
+		const postType = await postTypeModel.findOne({ _id: req.params.posttypeid });
+		const allModels = await dataModel.find({});
+		const allCategories = await categoryModel.find();
+
+		numberOfPages = Math.ceil(posts?.length / ITEMS_PER_PAGE);
+		let finalPosts = posts.slice(0, ITEMS_PER_PAGE);
+
+		if(paginationtype && paginationtype === 'default'){
+			console.log("default pagination condition")
+			finalPosts = posts.slice(thisPage*ITEMS_PER_PAGE, thisPage*ITEMS_PER_PAGE+ITEMS_PER_PAGE);
+			numberOfPages = Math.ceil(posts?.length / ITEMS_PER_PAGE);
+		} else if(paginationtype && paginationtype === 'search'){
+			console.log("search type pagination");
+			const searchRegexp = new RegExp(searchquery, 'i');
+			const allPosts = await postModel.find({postType: req.params.posttypeid, postName:searchRegexp});
+			finalPosts = allPosts.slice(thisPage*ITEMS_PER_PAGE, thisPage*ITEMS_PER_PAGE+ITEMS_PER_PAGE);
+			numberOfPages = Math.ceil(allPosts?.length / ITEMS_PER_PAGE);
+		} else if(paginationtype && paginationtype === 'filtered'){
+			console.log('filtered pagination condition')
+			let posts;
+			if (filterdate == "All Dates") {
+				if (filtercategory == "All Categories") {
+					posts = await postModel.find({ postType: req.params.posttypeid });
+					finalPosts = posts?.slice(thisPage*ITEMS_PER_PAGE, thisPage*ITEMS_PER_PAGE+ITEMS_PER_PAGE)
+				} else {
+					posts = await postModel.find({
+						postType: req.params.posttypeid,
+						category: {
+							$elemMatch: { _id: filtercategory }
+						}
+					});
+					finalPosts = posts?.slice(thisPage*ITEMS_PER_PAGE, thisPage*ITEMS_PER_PAGE+ITEMS_PER_PAGE)
+				}
+			} else {
+				const startDate = new Date(`${filterdate}-01T00:00:00Z`);
+				const endDate = new Date(`${filterdate}-31T23:59:59Z`);
+
+				if (filtercategory == "All Categories") {
+					posts = await postModel.find({
+						postType: req.params.posttypeid,
+						createdAt: { $gte: startDate, $lte: endDate }
+					});
+					finalPosts = posts?.slice(thisPage*ITEMS_PER_PAGE, thisPage*ITEMS_PER_PAGE+ITEMS_PER_PAGE)
+				} else {
+					posts = await postModel.find({
+						postType: req.params.posttypeid,
+						category: {
+							$elemMatch: { _id: filtercategory }
+						},
+						createdAt: { $gte: startDate, $lte: endDate }
+					});
+					finalPosts = posts?.slice(thisPage*ITEMS_PER_PAGE, thisPage*ITEMS_PER_PAGE+ITEMS_PER_PAGE)
+				}
+			}
+			numberOfPages = Math.ceil(posts?.length / ITEMS_PER_PAGE);
+		}
+
+		console.log("pagination updated, rendering all posts...");
+		res.render("allposts", {
+			allPosts: published === 'true' ? finalPosts.filter(item => item?.status === 'published') : hidden === 'true' ? finalPosts.filter(item => item.visibility === 'hidden') : finalPosts,
+			published: finalPosts.filter(item => item?.status === 'published'),
+			drafts: finalPosts.filter(item => item?.status === 'draft'),
+			hidden: finalPosts.filter(item => item?.visibility === 'hidden'),
+			allModels,
+			postTypeName: postType.postTypeName,
+			postTypeId: req.params.posttypeid,
+			dates,
+			allCategories,
+			currentpage: currentpage || 1,
+			paginationtype: paginationtype || 'default',
+			searchquery: searchquery || '',
+			filterdate: filterdate,
+			filtercategory: filtercategory,
+			numberOfPages,
+			message:req.flash('message')
+		})
+	} catch (error) {
+		console.log(error);
+		res.status(500).json({ message: 'Internal server error' });
+	}
+}

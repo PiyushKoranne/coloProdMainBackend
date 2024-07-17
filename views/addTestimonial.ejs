@@ -1,0 +1,66 @@
+<div style="width: 100%; height: 100%;background-color: #f0f0f1;display: flex;align-items:flex-start;justify-content: space-between;position: relative;">
+
+
+    <form action="/api/v1/manage/add-review" enctype="multipart/form-data" method="POST" style="width: 36%;padding: 15px;display: flex;flex-direction: column;height: 93vh;">
+			<h1 style="font-size: 18px;font-weight: 500;">
+				Add Testimonial
+			</h1>
+
+        <label class="mt-3" for="" style="text-transform: capitalize;margin-bottom: 5px;" >Reviewer Name:</label>
+        <input type="text" class="form-control" style="border: 1px solid rgba(0,0,0,0.2);" id="reviewerName" name="reviewerName" >
+        <span style="color: rgba(0,0,0,0.7);font-size: 13px;font-weight: 500;">The name is how it appears on the site.</span>
+
+        <label class="mt-3" for="" style="text-transform: capitalize;margin-bottom: 5px;" >Reviewer Image:</label>
+        <input type="file" class="form-control" style="border: 1px solid rgba(0,0,0,0.2);" id="reviewerImage" name="reviewerImage" >
+        
+
+        <label class="mt-2" for="" style="text-transform: capitalize;margin-bottom: 5px;" >Review Score:</label>
+        <input type="number" class="form-control" min="1" max="5" style="border: 1px solid rgba(0,0,0,0.2);" id="reviewScore" name="reviewScore" >
+        
+        <label class="mt-3" for="" style="text-transform: capitalize;margin-bottom: 5px;" >Review Content:</label>
+        <textarea name="reviewContent" id="reviewContent" cols="30" rows="5" style="border: 1px solid rgba(0,0,0,0.2);"></textarea>
+        <span style="color: rgba(0,0,0,0.7);font-size: 13px;font-weight: 500;">This is the actual content of the review. This is how it appears on the site.</span>
+
+				<label class="mt-3" for="" style="text-transform: capitalize;margin-bottom: 5px;" >Google Review Link:</label>
+        <input type="text" class="form-control" style="border: 1px solid rgba(0,0,0,0.2);" id="googleReviewLink" name="googleReviewLink" >
+
+        <button class="button-main button-main-md" type="submit" style="border-radius: 2px;margin-top: 10px;">Add Review</button>
+        
+    </form>
+</div>
+
+<script>
+    function generateproductId() {
+        
+        const postTypeName = document.getElementById("reviewerName").value;
+        const slugElement = document.getElementById("productId");
+        if(!postTypeName) return slugElement.value ="";
+        const dt = new Date();
+        const mil = "__"+dt.getTime();
+        const slug = "crp__"+postTypeName.toLowerCase()?.split(" ").join("")+mil;
+        slugElement.value = slug;
+    }
+
+    // JavaScript state management for real-time updates
+    document.getElementById('reviewerName').addEventListener('input', function(event) {
+        document.getElementById('couponCodePlaceholder').innerText = event.target.value;
+    });
+    document.getElementById('reviewContent').addEventListener('input', function(event) {
+        document.getElementById('reviewContentPlaceholder').innerText = event.target.value;
+    });
+
+    document.getElementById('reviewContent').addEventListener('input', function(event) {
+        document.getElementById('reviewContentPlaceholderSecond').innerText = event.target.value;
+    });
+
+    var swiper = new Swiper(".mySwiper", {
+      spaceBetween: 20,
+      slidesPerView: 2,
+      loop: true,
+      navigation: {
+        nextEl: ".swiper-button-next",
+        prevEl: ".swiper-button-prev",
+      },
+  
+    });
+</script>

@@ -1,0 +1,283 @@
+<div style="width: 100%;height: 100%;padding: 15px; overflow-y: auto;padding-bottom: 50px;">
+	<div style="display: flex;align-items: center;justify-content: space-between;width: 100%;">
+		<div id="all-posts-top-heading" style="width: 100%;">
+			<h1 style="font-size: 18px;font-weight: 500;">
+				Orders
+			</h1>
+			<div style="display: flex;align-items: center;justify-content: space-between;width: 100%;">
+				<p style="font-size: 13px;margin: 0;"> <a class="nrm-txt" style="font-weight: 400;text-decoration: none;color: #484848;" href="/api/v1/manage/show-posts-by-post-type">All <span style="color: #969696;" >(<%= orders?.length %>)</span> |</a> <a class="nrm-txt" style="font-weight: 400;text-decoration: none;color: #484848;" href="/api/v1/manage/show-posts-by-post-type">Completed <span style="color: #969696;" >(<%= completedOrders?.length %>)</span> |</a> <a class="nrm-txt" style="font-weight: 400;text-decoration: none;color: #484848;" href="/api/v1/manage/show-posts-by-post-type">Pending <span style="color: #969696;" >(<%= pendingOrders?.length %>)</span></a></p>
+
+				<div style="display: flex;align-items: center;gap: 5px;">
+					<form action="/api/v1/manage/search-orders-by-id" method="post">
+						<input style="padding: 5px;outline: none;border: 1px solid rgba(0,0,0,0.25);" type="text" name="orderId" id="orderId">
+						<button class="button-secondary-blue" style="border-radius: 2px;">Search Orders</button>
+					</form>	
+				</div>
+			</div>
+			
+
+			<div style="display: flex;align-items: center;justify-content: flex-end;width: 100%;padding: 10px 0px;">
+				<div>
+					<nav aria-label="Page navigation example">
+						<ul class="pagination" style="margin: 0;">
+						  <li class="page-item <%= parseInt(currentpage) == 1 ? 'disabled':'' %>"><a class="page-link button-secondary" style="border-radius: 2px;" href="/api/v1/manage/show-posts-by-post-type?currentpage=<%= parseInt(currentpage)-1 %>&paginationtype=<%= paginationtype %>&searchquery=<%= searchquery %>"><span aria-hidden="true">&laquo;</span></a></li>
+
+						  <% for(let i=1; i <= parseInt(numberOfPages); i++) { %>
+							<li class="page-item <%= parseInt(currentpage) == i ? 'active':'' %>"><a class="page-link button-secondary" style="border-radius: 2px;" href="/api/v1/manage/show-posts-by-post-type?currentpage=<%= i %>&paginationtype=<%= paginationtype %>&searchquery=<%= searchquery %>"><span aria-hidden="true"><%= i %></span></a></li>
+						  <% } %>
+
+						  <li class="page-item <%= parseInt(currentpage) == numberOfPages ? 'disabled':'' %>"><a class="page-link button-secondary" style="border-radius: 2px;" href="/api/v1/manage/show-posts-by-post-type?currentpage=<%= parseInt(currentpage)+1 %>&paginationtype=<%= paginationtype %>&searchquery=<%= searchquery %>"><span aria-hidden="true">&raquo;</span></a></li>
+						</ul>
+					</nav>
+				</div>
+			</div>
+			<div class="msg-container">
+				<% message?.forEach(msgItem =>{ %>
+					<div class="msg" style="background-color: <%= msgItem?.success ? '#fff':'#FFB0B03f' %>;">
+						<p style="text-transform:capitalize"><i class="<%= msgItem?.success ? 'fa-regular fa-bell' : 'fa-solid fa-circle-exclamation' %>" style="color:<%= msgItem?.success ? '#484848':'#D04848'  %>"></i><%= msgItem?.message || 'Howdy! Manage your pages here.' %></p>
+						<button class="close-msg-btn" onclick="closeMessage(this)">&times;</button>
+					</div>
+				<% }) %>
+			</div>
+		</div>
+		<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+	</div>
+	<style>
+		tbody tr:nth-child(odd) {
+			background-color: #f6f7f7;
+		}
+
+		tbody tr:nth-child(even) {
+			background-color: #fff;
+		} 
+	</style>
+	
+	<% if(orders?.length> 0) { %>
+		<table width="100%" cellspacing="0" cellpadding="0" style="border: 1px solid rgba(0,0,0,0.25);">
+			<thead style="border-bottom: 2px solid #d8d8d8;background-color: #fff;">
+				<tr>
+					<th>
+						<div style="display: flex; align-items: center; justify-content: start;padding: 10px;">
+							<h3 style="font-size: 14px;margin: 0px;">Order Id</h3>
+						</div>
+					</th>
+					<th>
+						<div style="display: flex; align-items: center; justify-content: start;padding: 10px;">
+							<h3 style="font-size: 14px;margin: 0px;">Placed At</h3>
+						</div>
+					</th>
+					<th>
+						<div style="display: flex; align-items: center; justify-content: start;">
+							<h3 style="font-size: 14px;margin: 0px;">Quantity</h3>
+						</div>
+					</th>
+					<th>
+						<div style="display: flex; align-items: center; justify-content: start;">
+							<h3 style="font-size: 14px;margin: 0px;">Payment Method</h3>
+						</div>
+					</th>
+					<th>
+						<div style="display: flex; align-items: center; justify-content: start;">
+							<h3 style="font-size: 14px;margin: 0px;">Order Total (<i class="fa-solid fa-indian-rupee-sign"></i>)</h3>
+						</div>
+					</th>
+					<th>
+						<div style="display: flex; align-items: center; justify-content: start;">
+							<h3 style="font-size: 14px;margin: 0px;">Payment Status</h3>
+						</div>
+					</th>
+					<th>
+						<div style="display: flex; align-items: center; justify-content: start;">
+							<h3 style="font-size: 14px;margin: 0px;">Order Status</h3>
+						</div>
+					</th>
+					<th>
+						<div style="display: flex; align-items: center; justify-content: start;">
+							<h3 style="font-size: 14px;margin: 0px;">Delivery Status</h3>
+						</div>
+					</th>
+					<th>
+						<div style="display: flex; align-items: center; justify-content: start;">
+							<h3 style="font-size: 14px;margin: 0px;">Actions</h3>
+						</div>
+					</th>
+				</tr>
+			</thead>
+			<tbody>
+
+				<% orders.reverse().forEach(post=> { %>
+					<tr style="border-bottom: 1px solid rgba(0,0,0,0.25);">
+						<td style="padding: 5px 10px;">
+							<div style="font-size: 13px;">
+								<span style="color: #2271B7;font-weight: 500;">
+									<%= post.orderId %>
+								</span>
+							</div>
+						</td>
+						<td style="padding: 5px 10px;">
+							<div style="font-size: 13px;">
+								<span style="font-weight: 400;color: #2271B7;">
+									<%= new Date(post?.createdAt).toLocaleString() %>
+								</span>
+							</div>
+						</td>
+						<td style="padding: 5px 10px;">
+							<div style="font-size: 13px;">
+								<span style="font-weight: 400;color: #2271B7;">
+									<%= post.quantity %>
+								</span>
+							</div>
+						</td>
+						<td style="padding: 5px 10px;">
+							<div style="font-size: 13px;">
+								<span style="width: 250px;display: block;">
+									<%= post.paymentMethod %>
+								</span>
+							</div>
+						</td>
+						<td style="padding: 5px 10px;">
+							<div style="font-size: 13px;">
+								<span style="font-weight: 500;color: #2271B7;">
+									Rs. <%= post.orderTotal %>/-
+								</span>
+							</div>
+						</td>
+						<td style="padding: 5px 10px;">
+							<div style="font-size: 13px;">
+								<span style="text-transform: capitalize;"><i class="fa-solid fa-circle" style="font-size: 10px;margin-right: 5px;color: <%= post?.status == 'Completed' ? '#74DC2E' :'#2271B7' %>;"></i><%= post?.status %></span>
+								<span class="nrm-txt" style="font-weight: 400;display: block;color: #484848;">
+									<%=  new Date(post?.createdAt).toLocaleString() %>
+								</span>
+							</div>
+						</td>
+						<td style="padding: 5px 10px;">
+							<div style="font-size: 13px;">
+								<span style="text-transform: capitalize;"><i class="fa-solid fa-circle" style="font-size: 10px;margin-right: 5px;color: <%= post?.orderStatus == 'completed' ? '#74DC2E' :'#2271B7' %>;"></i>
+									<span><%= post.orderStatus %></span>
+
+								<% if (post?.deliveryStatus !== "Delivered") { %>
+									<form action="/api/v1/manage/update-order-status" id="<%=post.orderId%>" method="post">
+										<input type="hidden" name="orderId" value="<%=post.orderId%>">
+										<input type="hidden" name="userEmail" value="<%=post.buyerInformation.email%>">
+										<span class="dashicons dashicons-dashboard"></span>
+										<select style="display: block;" onchange="submitForm(this)" name="orderStatus">
+											<option value="select">select</option>
+											<option value="pending">Pending</option>
+											<option value="processing">Processing</option>
+											<option value="completed">Completed</option>
+										</select>
+									</form>
+								<% } %>
+
+									
+					
+
+									
+								</span>
+								<span class="nrm-txt" style="font-weight: 400;display: block;color: #484848;">
+									
+								</span>
+							</div>
+						</td>
+
+					</td>
+					<td style="padding: 5px 10px;">
+						<div style="font-size: 13px;">
+							<span style="text-transform: capitalize;">
+								<% if (post?.deliveryStatus === "Pending") { %>
+									<i style="color: #2271B7;" class="fa-regular fa-clock"></i>
+								<% } else if(post?.deliveryStatus === "Dispatching") { %>
+									<i style="color: #2271B7;" class="fa-solid fa-boxes-packing"></i>
+								<% } else if(post?.deliveryStatus === "Shipping") { %>
+									<i style="color: #2271B7;" class="fa-solid fa-truck-arrow-right"></i>
+								<% } else if(post?.deliveryStatus === "Delivered") { %>
+									<i style="color: green;" class="fa-regular fa-circle-check"></i>
+								<% } %>
+								
+								<style>
+									option.a{
+										width: 112px;
+									}
+								</style>
+								<span><%= post?.deliveryStatus %></span>
+								
+								<% if (post?.deliveryStatus !== "Delivered") { %>
+
+								<form action="/api/v1/manage/update-delivery-status" id="<%=post.orderId%>" method="post">
+									<input type="hidden" name="orderId" value="<%=post.orderId%>">
+									<input type="hidden" name="userEmail" value="<%=post.buyerInformation.email%>">
+									<span class="dashicons dashicons-dashboard"></span>
+									<select style="display: block;" onchange="submitForm(this)" name="deliveryStatus">
+									<% if (post?.orderStatus === "pending") { %>
+											<option class="styles" value="select">select</option>
+											<option class="styles" value="Pending">Pending</option>
+									<% } else if(post?.orderStatus === "processing") { %>
+										<option class="styles" value="select">select</option>
+											<option class="styles" value="Dispatching">Dispatching</option>
+											<option class="styles" value="Shipping">Shipping</option>
+											<option class="styles" value="Out_For_Delivery">Out for delivery</option>
+									<% } else if(post?.orderStatus === "completed") { %>
+										<option class="styles" value="select">select</option>
+									     	<option class="styles" value="Delivered">Delivered</option>
+									<% } %>
+									<% } %>
+
+
+
+										
+									</select>
+								</form>
+
+								
+							</span>
+							<span class="nrm-txt" style="font-weight: 400;display: block;color: #484848;">
+								
+							</span>
+						</div>
+					</td>
+						<td style="padding: 5px 10px;">
+							<div style="font-size: 13px;">
+								<span style="font-weight: 400;text-transform: capitalize;">
+									<i class="fa-solid fa-eye" onclick="showOrder('<%= post.orderId %>')" style="font-size: 12px;color: <%= post?.visibility == 'visible' ? '#74DC2E' :'#2271B7' %>;cursor: pointer;"></i>
+								</span>
+							</div>
+						</td>
+					</tr>
+
+					<% }) %>
+			</tbody>
+		</table>
+		<% } else { %>
+			<div class="empty-post-bg"
+				style="display: flex;flex-direction: column; align-items: center;justify-content: center;height: 400px;">
+				<h1 style="color:rgba(0,0,0,0.75);margin-bottom: 25px;font-family: Arial, Helvetica, sans-serif;font-weight: 500;">No orders have been placed yet...</h1>
+				<button class="button-secondary-blue">Home</button>
+			</div>
+		<% } %>
+</div>
+<script>
+	function closeMessage(buttonElement) {
+		const container = buttonElement.closest(".msg");
+		container.style.display = 'none';
+		const parent = buttonElement.closest(".msg-container");
+		const children = parent.querySelectorAll(".msg");
+		var visibleCount = 0;
+		for(var i=0; i<children.length; i++){
+			if(window.getComputedStyle(children[i]).display !== none){
+				visibleCount++;
+			}
+		}
+		if(visibleCount === 0){
+			parent.style.display = 'none'
+		}
+	}
+
+	function showOrder(orderId) {
+		window.location.href = `/api/v1/manage/show-order/${orderId}`;
+	}
+
+	function submitForm(selectElement) {
+		const form = selectElement.closest("form")
+        form.submit();
+    }
+</script>
