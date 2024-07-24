@@ -1,10 +1,10 @@
 const mongoose = require("mongoose");
 
-const OrderSchema = new mongoose.Schema({
-	id:{type: String, required:true},
-	receipt:{type: String, required:true},
+const PaymentSchema = new mongoose.Schema({
+	paymentName: String,
+	paymentAmount: Number,
 })
 
-const orderModel = mongoose.model("Order", OrderSchema);
+const paymentModel = mongoose.model("Pricing", PaymentSchema);
 
-module.exports = {orderModel}
+module.exports = paymentModel

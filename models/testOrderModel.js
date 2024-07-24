@@ -16,6 +16,10 @@ const TestOrderSchema = new mongoose.Schema({
 	email : String,
 	race : String,
 	ethnicity : String,
+	isInvoiced: { type: Boolean, default: false},
+	orderConfirmation: { type: Boolean, default: false},
+	productId:String,
+	productName: String,
 	paymentConfirmed: Boolean,
 	paymentInformation:{
 		status: {

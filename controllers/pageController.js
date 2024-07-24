@@ -12,13 +12,89 @@ const { reviewModel } = require("../models/reviewModel")
 const requestCallBackModel = require("../models/callbackModel")
 const { couponModel } = require("../models/couponModel")
 const { indianStatesAndCities } = require("../utils/constants");
-const { pricingManagerModel } = require('../models/priceManagerModel');
 const { orderModel } = require('../models/userModel');
 const { log } = require("../utils/utilFunctions");
 const { default: axios } = require('axios');
 const providerModel = require('../models/providerModel');
 const bcrypt = require("bcrypt");
 const testOrdersModel = require('../models/testOrderModel');
+const paymentModel = require("../models/paymentModel")
+const fsPromise = require('fs').promises;
+const path = require("path");
+const XLSX = require('xlsx');
+
+function fillOrderDetails(orderData, filePath) {
+  const workbook = XLSX.readFile(filePath);
+
+  // Get the first worksheet
+  const sheetName = workbook.SheetNames[0];
+  const worksheet = workbook.Sheets[sheetName];
+
+  // Find the next empty row in the worksheet
+  const range = XLSX.utils.decode_range(worksheet['!ref']);
+  let nextRow = range.e.r + 1;
+
+  for (let R = range.s.r; R <= range.e.r; R++) {
+    let empty = true;
+    for (let C = range.s.c; C <= range.e.c; C++) {
+      const cell_address = { c: C, r: R };
+      const cell_ref = XLSX.utils.encode_cell(cell_address);
+      if (worksheet[cell_ref]) {
+        empty = false;
+        break;
+      }
+    }
+    if (empty) {
+      nextRow = R;
+      break;
+    }
+  }
+
+  // Mapping of backend data to Excel columns
+  const columnMapping = {
+    'orderId': ['A'],
+    'status': ['B'], // set
+    'orderDate': ['C'], // set
+    'firstName': ['E', 'O'],
+    'lastName': ['F', 'P'],
+    'streetAddress': ['H', 'Q'],
+    'city': ['I','R'],
+    'state': ['J','S'],
+    'zip': ['K','T'],
+    'countryCode': ['L','U'], // set
+    'email': ['M'],
+    'phone': ['N'],
+    'dob': ['AB'],
+    'gender': ['AD'],
+    'race': ['AE'],
+    'ethnicity': ['AF'],
+    'paymentMethod': ['AN'], // set
+    'productItemNumber': ['AQ'], // set
+    'productItemName': ['AR'], // set
+    'productPrice': ['AT','AW', 'AY']
+  };
+
+
+   // Fill the worksheet with order data
+  Object.keys(orderData).forEach((key) => {
+    if (columnMapping[key]) {
+      columnMapping[key].forEach((column) => {
+        const cellAddress = column + (nextRow + 1); // Adjust for 0-based index
+        worksheet[cellAddress] = { v: orderData[key], t: 's' }; // Assuming all data is string
+      });
+    }
+  });
+
+  // Update the worksheet range
+  worksheet['!ref'] = XLSX.utils.encode_range(range.s, { c: range.e.c, r: nextRow });
+
+
+  // Write the updated workbook to a new file or overwrite the existing file
+  XLSX.writeFile(workbook, filePath);
+  console.log("Row added to Excel Sheet");
+}
+
+
 
 exports.renderAddProject = async (req, res) => {
 	const { decoded } = req.jwt;
@@ -1016,7 +1092,7 @@ exports.searchPagesByName = async (req, res) => {
 			client_id: req.body.client_id,
 			client_secret: req.body.client_secret,
 			grant_type: "authorization_code",
-			redirect_uri: "http://192.168.16.36:5173/auth-redirect",
+			redirect_uri: "http://174.138.76.145/auth-redirect",
 			code: req.body.code,
 		});
 
@@ -2186,6 +2262,32 @@ exports.renderAllIndependentOrders = async (req, res) => {
 	}
 }
 
+exports.renderAllInvoicedOrders = async (req, res) => {
+        try {
+                const { currentpage, searchquery, paginationtype } = req.query;
+                const providers = await testOrdersModel.find({isInvoiced: true});
+                let numberOfPages;
+                let thisPage;
+                if (currentpage) thisPage = parseInt(currentpage) - 1;
+                else thisPage = 0;
+
+                numberOfPages = Math.ceil(providers?.length / ITEMS_PER_PAGE);
+                let finalPosts = providers.slice(0, ITEMS_PER_PAGE);
+                console.log("rendering...")
+                res.render('invoicedOrders', {
+                        orders:providers,
+                        currentpage: currentpage || 1,
+                        paginationtype: paginationtype || 'default',
+                        searchquery: searchquery || '',
+                        numberOfPages,
+                        message: req.flash('message')
+                });
+        } catch (error) {
+                log(error);
+                res.status(500).json({ success: true, message: 'server error' })
+        }
+}
+
 exports.searchOrdersById = async (req, res) => {
 	try {
 		const { orderId } = req.body;
@@ -2212,7 +2314,7 @@ exports.renderOrder = async (req, res) => {
 	try {
 		const { orderId } = req.params;
 		if (!orderId) return res.status(400).json({ success: false, message: 'please provide a valid order id' });
-		const order = await orderModel.findOne({ orderId });
+		const order = await testOrdersModel.findOne({ _id: orderId });
 		if (!order) return res.status(400).json({ success: false, message: 'order not found, please check the order id' });
 		res.render('order', {
 			order,
@@ -2233,6 +2335,175 @@ exports.renderCreateNewProvider = async (req, res) => {
 		res.status(500).json({ success: false, message: 'server error' });
 	}
 }
+exports.renderUpdateProvider = async (req, res) => {
+	try{
+		const {providerId} = req.params;
+		const provider = await providerModel.findOne({_id: providerId});
+		if(!provider) return res.status(400).json({success: false, msg:"provider not found"});
+		res.render('updateProvider', {
+			message: req.flash('message'),
+			providerData: provider,
+		})
+	} catch (err) {
+		console.log(err)
+	}
+}
+
+exports.downloadProviderOrders = async (req, res) => {
+	try{
+                const {providerId} = req.params;
+                const provider = await providerModel.findOne({_id: providerId});
+                if(!provider) return res.status(400).json({success: false, msg:"provider not found"});
+                const ordersMatch = await testOrdersModel.find({providerId: providerId}).lean();
+                if(!ordersMatch) return res.status(400).json({success: false, msg:"orders not found"});
+
+		// make a copy of the blank excel sheet :
+		const blankFilePath = path.join(__dirname, "../export_data/blank_files/blankOrders.xls");
+		const tempFileName = `${providerId}_${provider.firstName+"_"+provider.lastName}_Orders.xls`;
+		const tempFilePath = path.join(__dirname, `../export_data/${providerId}_${provider.firstName+"_"+provider.lastName}_Orders.xls`);
+
+		await fsPromise.copyFile(blankFilePath, tempFilePath);
+
+		for(let orderData of ordersMatch) {
+			const post = await postModel.findOne({_id: orderData.productId});
+
+        	        orderData.status = "Processing";
+                	orderData.orderDate = new Date().toLocaleString();
+                	orderData.countryCode = "US";
+                	orderData.productItemNumber = "1";
+                	orderData.productItemName = post ? post.postData.productName: "";
+                	orderData.productPrice = post ? post.postData.productPrice : "";
+                	orderData.paymentMethod = orderData.isInvoiced ? "INVOICE":"ONLINE";
+
+			fillOrderDetails(orderData, tempFilePath);
+
+		}
+
+                res.download(tempFilePath, tempFileName, async (err) => {
+                        if (err) {
+                                console.error('Error downloading the file:', err);
+                                res.status(500).send('Error downloading the file.');
+                        }
+			await fsPromise.unlink(tempFilePath);
+                });
+
+		// await fsPromise.unlink(tempFilePath);
+		console.log("provider order sheet downloaded and removed")
+
+        } catch (err) {
+		console.log(err)
+        }
+}
+
+
+exports.updateProvider = async (req, res) => {
+	try{
+		const {firstName, providerId, mi, lastName, dob, email, phone, address1, address2, city, state, zip, npi, lisProviderId, resultContactEmail} = req.body;
+		const match = await providerModel.findOne({_id: providerId});
+		if(!match) return res.satus(400).json({success: false, msg:"provider not found"});
+
+                const updatedProvider = await providerModel.findOneAndUpdate({ _id: providerId },{ $set: {
+			firstName,
+                        mi,
+                        lastName,
+                        dob: new Date(dob),
+                        email,
+                        phone,
+                        address1,
+                        address2,
+                        city,
+                        state,
+                        zip,
+                        npi,
+                        lisProviderId,
+                        resultContactEmail,
+                }});
+
+                await updatedProvider.save();
+                res.redirect("/api/v1/manage/render-all-providers");	
+	} catch(err) {
+		console.log(err);
+		res.status(500).json({success: false, err})
+	}
+}
+
+exports.updateProviderManual = async (req, res) => {
+        try{
+                const {firstName, accessToken, mi, lastName, dob, email, phone, address1, address2, city, state, zip, npi, lisProviderId, resultContactEmail} = req.body;
+		console.log("UPDATING MANUALLY", req.body);
+
+		const decoded = await jwt.verify(accessToken, process.env.JWT_ACCESS_TOKEN_SECRET);
+		if(!decoded) return res.status(401).json({msg: "unauthorized to update provider"});
+
+		const match =  await providerModel.findOne({ _id: decoded._id }).lean();
+		if(!match) return res.status(401).json({msg:"unauthorized for this action"});
+
+                const updatedProvider = await providerModel.findOneAndUpdate({ _id: providerId },{ $set: {
+                        firstName,
+                        mi,
+                        lastName,
+                        dob: new Date(dob),
+                        email,
+                        phone,
+                        address1,
+                        address2,
+                        city,
+                        state,
+                        zip,
+                        npi,
+                        lisProviderId,
+                        resultContactEmail,
+                }});
+
+
+		const providerData = await providerModel.findOne({ _id: decoded._id }).lean();
+		delete providerData.password;
+		delete providerData.accessToken;
+		// delete providerData.profileImage;
+		
+
+                await updatedProvider.save();
+                res.status(200).json({success: true, providerData});
+        } catch(err) {
+                console.log(err);
+                res.status(500).json({success: false, err})
+        }
+}
+
+
+exports.managePricingAndData = async (req, res) => {
+        try {
+		console.log("RENDERING PRICE MANAGER");
+		const pricingData = await paymentModel.findOne({});  
+		console.log("DTAA", pricingData);
+                res.render('pricingManager', {
+                        message: req.flash('message'),
+			paymentData: pricingData,
+                })
+        } catch (error) {
+                log(error);
+                res.status(500).json({ success: false, message: 'server error' });
+        }
+}
+
+exports.updatePricingData = async (req, res) => {
+	try{
+		const {paymentName, paymentAmount} = req.body;
+		console.log("UPDATING PRICING DATA", req.body);
+		let existing = await paymentModel.findOne({});
+		if(!existing){
+			// const newPayment
+		}
+		await paymentModel.findOneAndUpdate({},{
+			paymentName,
+			paymentAmount,
+		});
+		req.flash("message","Pricing data updated successfully!")
+		res.redirect("/api/v1/manage/render-pricing-manager");
+	} catch {
+
+	}
+}
 
 exports.createNewProvider = async (req, res) => {
 	try {
@@ -2245,7 +2516,7 @@ exports.createNewProvider = async (req, res) => {
 			firstName, 
 			mi,
 			lastName, 
-			dob, 
+			dob : new Date(dob), 
 			email,
 			phone,
 			address1,
@@ -2307,6 +2578,7 @@ exports.renderOrdersByProviderId = async (req, res) => {
 
 
 		res.render('providerOrders', {
+			providerId,
 			orders: ordersByProvider,
 			currentpage: currentpage || 1,
 			paginationtype: paginationtype || 'default',
@@ -2319,6 +2591,8 @@ exports.renderOrdersByProviderId = async (req, res) => {
 		res.status(500).json({ success: false, message: 'server error' });
 	}
 }
+
+
 
 exports.renderCategoriesManager = async (req, res) => {
 	try {
@@ -2371,14 +2645,6 @@ exports.renderReviewPage = async (req, res) => {
 
 exports.renderProductPriceManager = async (req, res) => {
 	try {
-		const productId = req.params.productId;
-		const product = await postModel.findOne({ _id: productId });
-		const pricingDetails = await pricingManagerModel.findOne({ productId: product?._id });
-		res.render('productPriceManager', {
-			indianStatesAndCities,
-			product,
-			pricingDetails,
-		})
 	} catch (error) {
 		log(error);
 		res.status(500).json({ error: 'internal server error' })
@@ -2387,9 +2653,6 @@ exports.renderProductPriceManager = async (req, res) => {
 
 exports.getProductPricingDetails = async (req, res) => {
 	try {
-		const { productId } = req.params;
-		const pricingDetails = await pricingManagerModel.findOne({ productId });
-		res.status(200).json({ success: true, pricingDetails: pricingDetails })
 	} catch (error) {
 		log(error);
 		res.status(500).json({ success: false, message: "server error" });
@@ -2398,41 +2661,6 @@ exports.getProductPricingDetails = async (req, res) => {
 
 exports.updateProductPricingDetails = async (req, res) => {
 	try {
-		const { productId } = req.params;
-		const { location, isAvailable, mrp } = req.body;
-		if (!location) return res.status(400).json({ success: false, message: 'location not found' });
-		const match = await pricingManagerModel.findOne({ productId });
-		if (match) {
-			if (match.pricingAndAvailability.filter(item => item.location === location)?.length > 0) {
-				await pricingManagerModel.findOneAndUpdate({ productId, 'pricingAndAvailability.location': location }, {
-					$set: {
-						'pricingAndAvailability.$.mrp': mrp,
-						'pricingAndAvailability.$.isAvailable': isAvailable,
-					}
-				}, { new: true });
-			} else {
-				await pricingManagerModel.findOneAndUpdate({ productId }, {
-					$push: {
-						pricingAndAvailability: {
-							location,
-							mrp,
-							isAvailable,
-						}
-					}
-				}, { new: true });
-			}
-		} else {
-			const newPricing = new pricingManagerModel({
-				productId,
-				pricingAndAvailability: {
-					location,
-					mrp,
-					isAvailable,
-				}
-			});
-			await newPricing.save();
-		}
-		res.redirect(`/api/v1/manage/product/${productId}/manage-price`)
 	} catch (error) {
 		log(error);
 		res.status(500).json({ success: false, message: "server error" });

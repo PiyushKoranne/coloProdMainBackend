@@ -134,6 +134,8 @@
 								<span style="font-weight: 400;text-transform: capitalize;">
 									<span onclick="showProvider('<%= post._id %>')" style="font-size: 12px;color: <%= post?.visibility == 'visible' ? '#74DC2E' :'#2271B7' %>;cursor: pointer;"><i class="fa-solid fa-eye"  style="font-size: 12px;color: <%= post?.visibility == 'visible' ? '#74DC2E' :'#2271B7' %>;cursor: pointer;"></i> View Provider</span>
 									<span> | </span>
+									<span onclick="editProvider('<%= post._id %>')" style="font-size: 12px;color: <%= post?.visibility == 'visible' ? '#74DC2E' :'#2271B7' %>;cursor: pointer;"><i class="fa-solid fa-pencil"  style="font-size: 12px;color: <%= post?.visibility == 'visible' ? '#74DC2E' :'#2271B7' %>;cursor: pointer;"></i> Edit Provider</span>
+                                                                        <span> | </span>
 									<span onclick="showOrders('<%= post._id %>')" style="font-size: 12px;color: <%= post?.visibility == 'visible' ? '#74DC2E' :'#2271B7' %>;cursor: pointer;" ><i class="fa-solid fa-arrow-trend-up" style="margin-right:5px; font-size: 12px;color: <%= post?.visibility == 'visible' ? '#74DC2E' :'#2271B7' %>;cursor: pointer;"></i>Show Orders</span>
 								</span>
 							</div>
@@ -146,7 +148,7 @@
 		<% } else { %>
 			<div class="empty-post-bg"
 				style="display: flex;flex-direction: column; align-items: center;justify-content: center;height: 400px;">
-				<h1 style="color:rgba(0,0,0,0.75);margin-bottom: 25px;font-family: Arial, Helvetica, sans-serif;font-weight: 500;">No orders have been placed yet...</h1>
+				<h1 style="color:rgba(0,0,0,0.75);margin-bottom: 25px;font-family: Arial, Helvetica, sans-serif;font-weight: 500;">No providers have been created yet...</h1>
 				<button onclick="createNewProvider()" class="button-secondary-blue">Create a Provider</button>
 			</div>
 		<% } %>
@@ -171,6 +173,10 @@
 	function showProvider(orderId) {
 		window.location.href = `/api/v1/manage/show-provider/${orderId}`;
 	}
+
+	function editProvider(orderId) {
+                window.location.href = `/api/v1/manage/render-update-provider/${orderId}`;
+        }
 
 	function showOrders(orderId) {
 		window.location.href = `/api/v1/manage/show-orders-by-provider/${orderId}`;

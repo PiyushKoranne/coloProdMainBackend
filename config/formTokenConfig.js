@@ -4,7 +4,7 @@ var utils = require('../utils/utilFunctions.js');
 var constants = require('../utils/constants.js');
 
 
-function getAnAcceptPaymentPage(callback, regId, paymentVerificationToken) {
+function getAnAcceptPaymentPage(callback, regId, paymentVerificationToken, productPrice) {
 
         console.log("Generate payment acceptance form");
         var merchantAuthenticationType = new ApiContracts.MerchantAuthenticationType();
@@ -13,7 +13,7 @@ function getAnAcceptPaymentPage(callback, regId, paymentVerificationToken) {
 
         var transactionRequestType = new ApiContracts.TransactionRequestType();
         transactionRequestType.setTransactionType(ApiContracts.TransactionTypeEnum.AUTHCAPTURETRANSACTION);
-        transactionRequestType.setAmount(utils.getRandomAmount());
+        transactionRequestType.setAmount(parseInt(productPrice));
 
         var setting1 = new ApiContracts.SettingType();
         setting1.setSettingName('hostedPaymentButtonOptions');
@@ -25,7 +25,7 @@ function getAnAcceptPaymentPage(callback, regId, paymentVerificationToken) {
 
         var setting3 = new ApiContracts.SettingType();
         setting3.setSettingName('hostedPaymentReturnOptions');
-        setting3.setSettingValue(`{"showReceipt": false, "url": "http://192.168.16.36:5173/thank-you?regid=${regId+'__pv__'+paymentVerificationToken}", "urlText": "Return to your site", "cancelUrl": "http://192.168.16.36:5173/?regid=${regId})"}`);
+        setting3.setSettingValue(`{"showReceipt": false, "url": "http://174.138.76.145/thank-you?regid=${regId+'__pv__'+paymentVerificationToken}", "urlText": "Return to your site", "cancelUrl": "http://174.138.76.145/?regid=${regId})"}`);
 
         var settingList = [];
         settingList.push(setting1);

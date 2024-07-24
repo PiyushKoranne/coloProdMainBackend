@@ -103,12 +103,20 @@ router.get("/get-user-data", verifyLogin, pageController.getUserData);
 router.get("/render-orders-manager", verifyLogin, pageController.renderOrdersManagerPage);
 router.get("/render-all-providers", verifyLogin, pageController.renderAllProviders);
 router.get("/render-independent-orders", verifyLogin, pageController.renderAllIndependentOrders);
+router.get("/render-invoiced-orders", verifyLogin, pageController.renderAllInvoicedOrders);
 router.post("/search-orders-by-id", verifyLogin, pageController.searchOrdersById);
 router.get("/show-order/:orderId", verifyLogin, pageController.renderOrder)
 router.get("/show-provider/:providerId", verifyLogin, pageController.renderProvider)
 router.get("/show-orders-by-provider/:providerId", verifyLogin, pageController.renderOrdersByProviderId)
 router.get("/render-create-new-provider", verifyLogin, pageController.renderCreateNewProvider)
 router.post("/add-new-provider", verifyLogin, uploader.any(), pageController.createNewProvider)
+router.get("/render-update-provider/:providerId", verifyLogin, pageController.renderUpdateProvider)
+router.get("/download-provider-orders/:providerId", verifyLogin, pageController.downloadProviderOrders);
+router.post("/update-provider", verifyLogin, pageController.updateProvider)
+router.post("/update-provider-manual", verifyLogin, pageController.updateProviderManual)
+router.get("/render-pricing-manager", verifyLogin, pageController.managePricingAndData);
+router.post("/update-pricing-manager", verifyLogin, pageController.updatePricingData);
+
 
 router.get("/render-price-manager", verifyLogin, pageController.renderPriceManagerPage);
 router.get('/product/:productId/manage-price',verifyLogin, pageController.renderProductPriceManager);

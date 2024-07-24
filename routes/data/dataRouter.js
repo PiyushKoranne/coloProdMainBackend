@@ -14,6 +14,83 @@ const jwt = require("jsonwebtoken");
 const fs = require('fs');
 const path = require('path');
 const getAnAcceptPaymentPage = require("../../config/formTokenConfig");
+const XLSX = require('xlsx');
+const postModel = require("../../models/postModel");
+
+function fillOrderDetails(orderData) {
+  // Path to your existing Excel file
+  const filePath = path.join(__dirname, '../../recforms/orders.xls');
+
+  // Read the Excel file
+  const workbook = XLSX.readFile(filePath);
+
+  // Get the first worksheet
+  const sheetName = workbook.SheetNames[0];
+  const worksheet = workbook.Sheets[sheetName];
+
+  // Find the next empty row in the worksheet
+  const range = XLSX.utils.decode_range(worksheet['!ref']);
+  let nextRow = range.e.r + 1;
+
+  for (let R = range.s.r; R <= range.e.r; R++) {
+    let empty = true;
+    for (let C = range.s.c; C <= range.e.c; C++) {
+      const cell_address = { c: C, r: R };
+      const cell_ref = XLSX.utils.encode_cell(cell_address);
+      if (worksheet[cell_ref]) {
+        empty = false;
+        break;
+      }
+    }
+    if (empty) {
+      nextRow = R;
+      break;
+    }
+  }
+
+  // Mapping of backend data to Excel columns
+  const columnMapping = {
+    'orderId': ['A'],
+    'status': ['B'], // set
+    'orderDate': ['C'], // set
+    'firstName': ['E', 'O'],
+    'lastName': ['F', 'P'],
+    'streetAddress': ['H', 'Q'],
+    'city': ['I','R'],
+    'state': ['J','S'],
+    'zip': ['K','T'],
+    'countryCode': ['L','U'], // set
+    'email': ['M'],
+    'phone': ['N'],
+    'dob': ['AB'],
+    'gender': ['AD'],
+    'race': ['AE'],
+    'ethnicity': ['AF'],
+    'paymentMethod': ['AN'], // set
+    'productItemNumber': ['AQ'], // set
+    'productItemName': ['AR'], // set
+    'productPrice': ['AT','AW', 'AY']
+  };
+
+  
+   // Fill the worksheet with order data
+  Object.keys(orderData).forEach((key) => {
+    if (columnMapping[key]) {
+      columnMapping[key].forEach((column) => {
+        const cellAddress = column + (nextRow + 1); // Adjust for 0-based index
+        worksheet[cellAddress] = { v: orderData[key], t: 's' }; // Assuming all data is string
+      });
+    }
+  });
+
+  // Update the worksheet range
+  worksheet['!ref'] = XLSX.utils.encode_range(range.s, { c: range.e.c, r: nextRow });
+
+
+  // Write the updated workbook to a new file or overwrite the existing file
+  XLSX.writeFile(workbook, filePath);
+  console.log("Data added to Excel Sheet");
+}
 
 // fetching data routes
 
@@ -42,8 +119,22 @@ router.post("/verify-payment", async (req, res) => {
 				'paymentInformation.transactionId': "COMPLETED__" + match._id.toString(),
 				'paymentInformation.paymentVerificationHash': "COMPLETED",
 				paymentConfirmed: true,
+				orderConfirmation: true,
 			}
 		})
+
+		// add data to the excel sheet 
+		const post = await postModel.findOne({_id: match.productId});
+
+		let orderData = await testOrdersModel.findOne({_id: regId}).lean();
+		orderData.status = "Processing";
+		orderData.orderDate = new Date().toLocaleString();
+		orderData.countryCode = "US";
+		orderData.productItemNumber = "1";
+		orderData.productItemName = post ? post.postData.productName: "";
+                orderData.productPrice = post ? post.postData.productPrice : "";
+		orderData.paymentMethod = orderData.isInvoiced ? "INVOICE":"ONLINE";
+		fillOrderDetails(orderData);
 		return res.status(200).json({ success: true, data: { scheduledAt: match.scheduledAt } });
 
 	} catch (error) {
@@ -51,6 +142,11 @@ router.post("/verify-payment", async (req, res) => {
 		res.status(500).json({ success: false, error })
 	}
 })
+
+// route for getting invoiced orders 
+// route for getting independent orders
+//
+
 router.post("/register-new-test-data", upload.any(), async (req, res) => {
 	try {
 		console.log("Registration data", req.body);
@@ -59,10 +155,17 @@ router.post("/register-new-test-data", upload.any(), async (req, res) => {
 
 		const { providerId } = req.body;
 		let checkProvider = false;
+		let checkInvoice = false;
 		if (providerId && providerId !== "undefined") {
 			const providerMatch = await providerModel.findOne({ _id: providerId });
 			if (providerMatch) checkProvider = true;
+			if(req.body.isInvoiced && req.body.isInvoiced === 'true') checkInvoice = true;
 		}
+
+		const post = await postModel.findOne({postType:"669a3a1f348f5b66bf71bfe2", postName:"ColoHealth"});
+		console.log("########################\n\n",post);
+		if(!post) return res.status(400).json({success: false, msg:"Product not found to place order"});
+
 
 		const newRegistration = new testOrdersModel({
 			providerId: (req.body.providerId && checkProvider) ? req.body.providerId : 'NULL',
@@ -81,14 +184,19 @@ router.post("/register-new-test-data", upload.any(), async (req, res) => {
 			ethnicity: req.body.ethnicity,
 			registrationConsent: req.body.confirm,
 			scheduledAt: req.body.scheduledAt,
-			paymentConfirmed: false,
+			orderConfirmation: (checkInvoice && checkProvider) ? true : false,
+			isInvoiced: checkInvoice,
+			productId:post._id,
+			productName: post.postData.productName,
+			paymentConfirmed: (checkInvoice && checkProvider) ? true : false,
 			paymentInformation: {
 				status: "PENDING",
-				transactionId: "PENDING"
+				transactionId: (checkInvoice && checkProvider) ? "INVOICED" : "PENDING",
 			}
 		});
 		await newRegistration.save();
 
+		// created a payment verificatyion token for future
 		const paymentVerificationToken = await jwt.sign({ regId: newRegistration._id }, "Test101Credentials");
 		await testOrdersModel.findOneAndUpdate({ _id: newRegistration._id }, {
 			$set: {
@@ -96,7 +204,7 @@ router.post("/register-new-test-data", upload.any(), async (req, res) => {
 			}
 		});
 
-		// rename the pdf 
+		// rename the pdf as it came from frontend
 		if (req.body.providerId) {
 			const oldPath = path.join(__dirname, "../../recforms", req.files[0].filename);
 			const newPath = path.join(__dirname, "../../recforms", `PROV_${req.body.providerId}_${req.body.firstName}_${req.body.lastName}_${newRegistration._id.toString()}_${req.files[0].originalname}`);
@@ -104,13 +212,27 @@ router.post("/register-new-test-data", upload.any(), async (req, res) => {
 			console.log("Req form pdf saved and renamed");
 		}
 
-		getAnAcceptPaymentPage((error, response) => {
+		if(checkInvoice){
+			let orderData = await testOrdersModel.findOne({_id: newRegistration._id}).lean();
+  	                orderData.status = "Processing";
+                	orderData.orderDate = new Date().toLocaleString();
+                	orderData.countryCode = "US";
+                	orderData.productItemNumber = "1";
+  	               	orderData.productItemName = post.postData.productName;
+			orderData.productPrice = post.postData.productPrice;
+			orderData.paymentMethod = orderData.isInvoiced ? "INVOICE":"ONLINE";
+                	fillOrderDetails(orderData);
+			return res.status(200).json({ regid: newRegistration._id })
+		}
+		
+		// generate a payment token
+		!checkInvoice && getAnAcceptPaymentPage((error, response) => {
 			if (error) {
 				throw error;
 			} else {
 				res.status(200).json({ code: response.token, regid: response.regid })
 			}
-		}, newRegistration._id, paymentVerificationToken);
+		}, newRegistration._id, paymentVerificationToken, post.postData.productPrice);
 
 	} catch (error) {
 		console.log(error);
@@ -184,7 +306,7 @@ router.post("/get-orders-for-provider", async(req, res) => {
 		if(!providerId) return res.status(400).json({success: false, msg:"provider is required"});
 		const match = await providerModel.findOne({_id: providerId});
 		if(!match) return res.status(400).json({success: false, msg:"cannot find provider"});
-		const orders = await testOrdersModel.find({providerId: match._id.toString()});
+		const orders = await testOrdersModel.find({providerId: match._id.toString(), orderConfirmation: true});
 		return res.status(200).json({success: true, orders:orders.map(item => ({orderId: item.orderId, _id:item._id.toString(), firstName: item.firstName, lastName: item.lastName, dob: item.dob}))});
 		
 	} catch (error) {
@@ -288,7 +410,7 @@ router.post("get-provider-orders", async (req, res) => {
 
 // orders will be placed only after successful payment 
 // order related routes
-router.post("/place-order", verifyUserLogin, dataController.placeOrder);
+// router.post("/place-order", verifyUserLogin, dataController.placeOrder);
 
 // placing order by provider
 

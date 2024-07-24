@@ -11,7 +11,6 @@ const { reviewModel } = require("../models/reviewModel")
 const requestCallBackModel = require("../models/callbackModel");
 const postTypeModel = require("../models/postTypeModel");
 const { InternalServerError, BadRequestError, UnauthorizedError, NotFoundError } = require("../config/apiErrors");
-const { pricingManagerModel } = require("../models/priceManagerModel");
 const { log, sendInvoiceEmail, getFormattedDate } = require("../utils/utilFunctions")
 const nodemailer = require("nodemailer");
 const adminModel = require("../models/adminModel");

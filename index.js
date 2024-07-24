@@ -45,7 +45,8 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.set('view engine', 'ejs');
 app.use(express.json());
 // app.use(morgan(process.env.MODE === "development" ? 'dev' : 'combined'));
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'static')));
+app.use('/ejsasset' ,express.static(path.join(__dirname, 'public')));
 
 const corsOptions = {
 	origin: ['http://192.168.16.36:5173'],
@@ -54,7 +55,7 @@ const corsOptions = {
 	credentials: true, // Enable credentials (cookies, HTTP authentication)
 };
 
-app.use(cors(corsOptions))
+app.use(cors())
 
 app.use(session({
 	secret:process.env.SESSION_SECRET,
@@ -84,10 +85,10 @@ app.use(flash());
 // routes
 app.get("/api-admin", (req, res)=>{
 	log("rendering all pages...");
-	res.redirect("/api/v1/manage/all-pages")
+	res.redirect("/api/v1/manage/all-pages");
 })
 
-app.use('/api/v1/manage', manageRouter)
+app.use('/api/v1/manage', manageRouter);
 
 app.get('/newpage', (req, res) => {
 	log("rendering new page...");
