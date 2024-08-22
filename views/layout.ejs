@@ -22,7 +22,7 @@
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
 		integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
 		crossorigin="anonymous"></script>
-	<script src="/ckeditor/ckeditor.js"></script>
+	<script src="/ejsasset/ckeditor/ckeditor.js"></script>
 	<script src="https://kit.fontawesome.com/e1dea6157c.js" crossorigin="anonymous"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/2.10.2/umd/popper.min.js"
 		integrity="sha512-nnzkI2u2Dy6HMnzMIkh7CPd1KX445z38XIu4jG1jGw7x5tSL3VBjE44dY4ihMU1ijAQV930SPM12cCFrB18sVw=="
@@ -272,7 +272,7 @@
 				<button id="dropdown-username-btn" class="dropdown-toggle"
 					style="height: 25px; font-size: 13px;background-color: transparent;border: none;outline: none;" type="button"
 					data-bs-toggle="dropdown" aria-expanded="false">
-					Howdy Admin! <img class="avatar-profile" src="/static/avatar_placeholder.jpg" width="17px"
+					Howdy Admin! <img class="avatar-profile" src="/ejsasset/static/avatar_placeholder.jpg" width="17px"
 						alt="avatar">
 				</button>
 				<button type="button" class="toggle" id="sidebar-toggle-btn">
@@ -281,7 +281,7 @@
 				<ul class="dropdown-menu" style="width: 275px;padding: 0px;">
 					<li style="display: flex;align-items: start;justify-content: flex-start;padding: 10px;gap: 10px;">
 						<figure style="margin: 0px;">
-							<img class="avatar-profile" src="/static/avatar_placeholder.jpg" width="90px" alt="avatar">
+							<img class="avatar-profile" src="/ejsasset/static/avatar_placeholder.jpg" width="90px" alt="avatar">
 						</figure>
 						<div style="display: flex;align-items: flex-start;flex-direction: column;padding: 10px;">
 							<p id="username-blk" style="font-size: 13px;cursor: pointer;margin: 0px;font-weight: 600;">User Name <span
@@ -326,54 +326,45 @@
 						<ul id="model-ul-list" class="menu-title-list btn-toggle-nav list-unstyled fw-normal  small">
 							<li><a id="all-pages-link" href="/api/v1/manage/render-all-providers"
 									style="padding: 8px 0px 8px 12px;font-size: 13px;line-height: 1.25rem;font-weight: 400; width: 100%;display: inline-block;"><i
-										class="fa-solid fa-user-tie" style="margin-right: 10px;"></i>Manage Providers</a></li>
+										class="fa-solid fa-stethoscope" style="margin-right: 10px;"></i>Manage Providers</a></li>
 							<li><a id="all-pages-link" href="/api/v1/manage/render-independent-orders"
 									style="padding: 8px 0px 8px 12px;font-size: 13px;line-height: 1.25rem;font-weight: 400; width: 100%;display: inline-block;"><i
-										class="fa-solid fa-vial-circle-check" style="margin-right: 10px;"></i>View Independent Orders</a></li>
+										class="fa-solid fa-user" style="margin-right: 10px;"></i>Customer Orders</a></li>
 							<li><a id="all-pages-link" href="/api/v1/manage/render-invoiced-orders"
 									style="padding: 8px 0px 8px 12px;font-size: 13px;line-height: 1.25rem;font-weight: 400; width: 100%;display: inline-block;"><i
-										class="fa-solid fa-dollar-sign" style="margin-right: 10px;"></i>Manage Invoiced Payments</a></li>
+										class="fa-solid fa-hospital-user" style="margin-right: 10px;"></i>Provider Orders</a></li>
+							<li><a id="all-pages-link" href="/api/v1/manage/render-add-manual-order"
+                                                                        style="padding: 8px 0px 8px 12px;font-size: 13px;line-height: 1.25rem;font-weight: 400; width: 100%;display: inline-block;"><i
+                                                                                class="fa-solid fa-plus" style="margin-right: 10px;"></i>Add Manual Tests</a></li>
+							<li><a id="all-pages-link" href="/api/v1/manage/render-data-exports"
+                                                                        style="padding: 8px 0px 8px 12px;font-size: 13px;line-height: 1.25rem;font-weight: 400; width: 100%;display: inline-block;"><i
+                                                                                class="fa-solid fa-file-excel" style="margin-right: 10px;"></i>Data Exports</a></li>
+							<li><a id="all-pages-link" href="/api/v1/manage/render-customization-page"
+                                                                        style="padding: 8px 0px 8px 12px;font-size: 13px;line-height: 1.25rem;font-weight: 400; width: 100%;display: inline-block;"><i
+                                                                                class="fa-solid fa-paperclip" style="margin-right: 10px;"></i>Customizations</a></li>
+							<li><a id="all-pages-link" href="/api/v1/manage/show-posts-by-post-type/669a3a1f348f5b66bf71bfe2"
+                                                                        style="padding: 8px 0px 8px 12px;font-size: 13px;line-height: 1.25rem;font-weight: 400; width: 100%;display: inline-block;"><i
+                                                                                class="fa-solid fa-kit-medical" style="margin-right: 10px;"></i>Products</a></li>
 						</ul>
 					</div>
 				</li>
 				<li class="mb-1">
-					<div class="menu-title-item align-items-center collapsed "
-						style="width: 100%; padding:5px 12px ;  font-size: 11px;line-height: 22px;font-weight: 600;text-transform: uppercase;letter-spacing: 0.5px;"
-						data-bs-toggle="collapse" data-bs-target="#acf-collapse" aria-expanded="true">
-						ACF
-					</div>
-					<div class="collapse show" id="acf-collapse">
-						<ul id="model-ul-list" class="menu-title-list btn-toggle-nav list-unstyled fw-normal  small">
-							<li><a id="all-pages-link" href="/api/v1/manage/all-models"
-									style="padding: 8px 0px 8px 12px;font-size: 13px;line-height: 1.25rem;font-weight: 400; width: 100%;display: inline-block;"><i
-										class="fa-solid fa-shapes" style="margin-right: 10px;"></i>All
-									Custom Fields</a></li>
-							<li id="add-new-model-li"><a id="all-pages-link" href="/api/v1/manage/add-new-model"
-									style="padding: 8px 0px 8px 12px;font-size: 13px;line-height: 1.25rem;font-weight: 400;width: 100%;display: inline-block;"><i
-										class="fa-solid fa-plus" style="margin-right: 10px;"></i>Add New</a></li>
-						</ul>
-					</div>
-				</li>
-				<li class="mb-1">
-					<div class="menu-title-item align-items-center collapsed "
-						style="width: 100%; padding:5px 12px ;  font-size: 11px;line-height: 22px;font-weight: 600;text-transform: uppercase;letter-spacing: 0.5px;"
-						data-bs-toggle="collapse" data-bs-target="#post-types-collapse" aria-expanded="true">
-						Post Types
-					</div>
-					<div class="collapse show" id="post-types-collapse">
-						<ul id="post-type-ul" class="menu-title-list btn-toggle-nav list-unstyled fw-normal  small">
-							<li><a id="all-pages-link" href="/api/v1/manage/render-all-post-types"
-									style="padding: 8px 0px 8px 12px;font-size: 13px;line-height: 1.25rem;font-weight: 400;width: 100%;display: inline-block;"><i
-										class="fa-solid fa-table-list" style="margin-right: 10px;"></i>All Post Types</a></li>
-							<li id="add-new-post-type-li">
-								<a id="all-pages-link" href="/api/v1/manage/render-add-post-type"
-									style="padding: 8px 0px 8px 12px;font-size: 13px;line-height: 1.25rem;font-weight: 400;width: 100%;display: inline-block;">
-									<i class="fa-solid fa-plus" style="margin-right: 10px;"></i>Add Post Type
-								</a>
-							</li>
-						</ul>
-					</div>
-				</li>
+                                        <div class="menu-title-item align-items-center collapsed "
+                                                style="width: 100%; padding:5px 12px ;  font-size: 11px;line-height: 22px;font-weight: 600;text-transform: uppercase;letter-spacing: 0.5px;"
+                                                data-bs-toggle="collapse" data-bs-target="#acf-collapse" aria-expanded="true">
+                                                Coupons & Vouchers
+                                        </div>
+                                        <div class="collapse show" id="acf-collapse">
+                                                <ul id="model-ul-list" class="menu-title-list btn-toggle-nav list-unstyled fw-normal  small">
+                                                        <li><a id="all-pages-link" href="/api/v1/manage/render-addnewcoupon"
+                                                                        style="padding: 8px 0px 8px 12px;font-size: 13px;line-height: 1.25rem;font-weight: 400; width: 100%;display: inline-block;"><i
+                                                                                class="fa-solid fa-plus" style="margin-right: 10px;"></i>Add New Coupon</a></li>
+                                                        <li><a id="all-pages-link" href="/api/v1/manage/all-coupons"
+                                                                        style="padding: 8px 0px 8px 12px;font-size: 13px;line-height: 1.25rem;font-weight: 400; width: 100%;display: inline-block;"><i
+                                                                                class="fa-solid fa-percent" style="margin-right: 10px;"></i>Manage Coupons</a></li>
+                                                </ul>
+                                        </div>
+                                </li>
 				<!-- <div class="Divider__StyledDivider-sc-1vy16c4-0 eeEjFz"></div> -->
 				<!-- <div class="Divider__StyledDivider-sc-1vy16c4-0 eeEjFz"></div> -->
 			</ul>
@@ -482,12 +473,12 @@
 					usernameElement.innerHTML = `${data?.userData?.username} <span style="display: block"><a style="font-size: 11px; color: #e5e5e5;" href="${data?.userData?.websiteUrl}">${data?.userData?.websiteName}</a></span>`;
 
 					const usernameDropDown = document.querySelector("#dropdown-username-btn");
-					usernameDropDown.innerHTML = `Howdy, ${data?.userData?.username} <img src="/images/${data?.userData?.profileImage}" width="17px" alt="avatar">`;
+					usernameDropDown.innerHTML = `Howdy, ${data?.userData?.username} <img src="/ejsasset/static/${'avatar_placeholder.jpg' || data?.userData?.profileImage}" width="17px" alt="avatar">`;
 
 					const pics = document.querySelectorAll(".avatar-profile");
 					pics.forEach(item => {
 						if (data?.userData?.profileImage) {
-							item.setAttribute('src', `/images/${data?.userData?.profileImage}`)
+							item.setAttribute('src', `/ejsasset/static/${'avatar_placeholder.jpg' || data?.userData?.profileImage}`)
 						}
 					})
 				}

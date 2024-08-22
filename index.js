@@ -49,13 +49,13 @@ app.use(express.static(path.join(__dirname, 'static')));
 app.use('/ejsasset' ,express.static(path.join(__dirname, 'public')));
 
 const corsOptions = {
-	origin: ['http://192.168.16.36:5173'],
+	origin: ['http://192.168.16.36:5173','http://192.168.16.221:5173'],
 	methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
 	allowedHeaders: 'Content-Type,Authorization',
 	credentials: true, // Enable credentials (cookies, HTTP authentication)
 };
 
-app.use(cors())
+app.use(cors(corsOptions))
 
 app.use(session({
 	secret:process.env.SESSION_SECRET,
@@ -225,7 +225,7 @@ app.get("/not-eligible", (req, res) => {
 	res.sendFile(path.join(__dirname, "static/index.html"));
 });
 
-app.get("/app", (req, res) => {
+app.get("/*", (req, res) => {
 	res.sendFile(path.join(__dirname, "static/index.html"));
 });
 

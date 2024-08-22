@@ -1,4 +1,5 @@
 const PRINT_LOGS = process.env.PRINT_LOGS === 'true';
+const orderIdCounterModel = require("../models/orderIdCounterModel");
 
 function getRandomString(text){
 	return text + Math.floor((Math.random() * 100000) + 1);
@@ -17,6 +18,26 @@ function getDate(){
 }
 
 
+const getNextOrderId = async () => {
+  let result;
+  let match  = await orderIdCounterModel.findOne({});
+  if(match){
+    result = await orderIdCounterModel.findOneAndUpdate(
+      {},
+      { $inc: { nextId: 1 } },
+      { new: true, upsert: true }
+    );
+  } else {
+    result = new orderIdCounterModel({
+	nextId:11500
+    });
+    await result.save();
+  }
+  return result.nextId;
+};
+
+
+module.exports.getNextOrderId = getNextOrderId;
 module.exports.getRandomString = getRandomString;
 module.exports.getRandomInt = getRandomInt;
 module.exports.getRandomAmount = getRandomAmount;

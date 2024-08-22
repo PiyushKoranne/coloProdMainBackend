@@ -2,12 +2,11 @@
 	<div class="center-wr" class="primary-bg-color">
 		<div class="login-page-container">
 			<div class="login-form-wr">
-				
-				<div class="login-form-container">
+				<div style="border:1px solid rgba(0,0,0,0.2);" class="login-form-container">
 					<figure>
 						<img src="/ejsasset/static/logo-updated.png"  alt="Sign In">
 					</figure>
-					<h1>Start your CMS journey in style.</h1>
+					<h1 style ="color:#0C1F8F;">Start your CMS journey in style.</h1>
 					<div class="login-heading-wr">
 						<h3>Sign In</h3>
 						<p>Start managing your website.</p>
@@ -31,13 +30,18 @@
 							type="password"
 							id="password"
 							name="password" value="" placeholder="Password">
-							<p onclick="togglePasswordViewState(this)">show</p>
+							<p style="color:#0C1F8F;" onclick="togglePasswordViewState(this)">show</p>
 						</div>
-						<a class="forgot-pwd-wr" href="/api/v1/manage/auth/forgot-password">Forgot password</a>
-						<button type="submit" class="button-main button-main-md login-submit-btn" style="background-color: #2271b1;" >Sign In</button>
+						<a class="forgot-pwd-wr" style="padding:0px;color:#0C1F8F;" href="/api/v1/manage/auth/forgot-password">Forgot password</a>
+						<button type="submit" class="button-main button-main-md login-submit-btn" style="background-color: #0C1F8F;" >Sign In</button>
 					</form>
-					<p class="login-additional-p"><span>or</span></p>
-					<button class="button-secondary signup">Sign Up</button>
+					<p style="background: linear-gradient(to bottom, #ffffff 0%, #ffffff 49%, #4848484a 49%, #4848484a 51%, #ffffff 51%);margin:13px 0px;height:21px" class="login-additional-p"></p>
+					<p style="font-size:14px;text-align:center;width: 100%;">
+						<%= 'Copyright '+ new Date().getFullYear()+'. All Rights Reserved.' %>
+					</p>
+					<p style="font-size:11px;text-align:center;width: 100%;color:#484848fa">
+						<%= 'Unauthorized use, distribution, or reproduction of any part of this software is strictly prohibited without prior written permission from NDD. For inquiries, please contact ' + 'info@newdaydiagnostics.com' + '.' %>
+					</p>
 				</div>
 			</div>
 		</div>

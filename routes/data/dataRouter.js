@@ -16,10 +16,14 @@ const path = require('path');
 const getAnAcceptPaymentPage = require("../../config/formTokenConfig");
 const XLSX = require('xlsx');
 const postModel = require("../../models/postModel");
+const { getNextOrderId } = require("../../utils/utilFunctions");
+const customizationModel = require("../../models/customizationModel");
+const {couponModel} = require("../../models/couponModel");
+const nodemailer = require("nodemailer");
 
 function fillOrderDetails(orderData) {
   // Path to your existing Excel file
-  const filePath = path.join(__dirname, '../../recforms/orders.xls');
+  const filePath = path.join(__dirname, '../../excel_data/orders.xls');
 
   // Read the Excel file
   const workbook = XLSX.readFile(filePath);
@@ -78,7 +82,7 @@ function fillOrderDetails(orderData) {
     if (columnMapping[key]) {
       columnMapping[key].forEach((column) => {
         const cellAddress = column + (nextRow + 1); // Adjust for 0-based index
-        worksheet[cellAddress] = { v: orderData[key], t: 's' }; // Assuming all data is string
+        worksheet[cellAddress] = { v: String(orderData[key]), t: 's' }; // Assuming all data is string
       });
     }
   });
@@ -102,6 +106,19 @@ router.get("/colo-pay", (req, res) => {
 	console.log("Generating a form token");
 	getAnAcceptPaymentPage((response) => { res.status(200).json({ code: response }); console.log("RESPONSE", response) });
 })
+
+router.post("/check-coupon", async (req, res) => {
+	try{
+		const {couponCode} = req.body;
+		const match = await couponModel.findOne({couponCode}).lean();
+		if(!match) return res.status(400);
+		return res.status(200).json({...match});
+	} catch(err) {
+		console.log(err);
+		res.status(500).json({success: false, err})
+	}
+})
+
 
 router.post("/verify-payment", async (req, res) => {
 	try {
@@ -145,31 +162,55 @@ router.post("/verify-payment", async (req, res) => {
 
 // route for getting invoiced orders 
 // route for getting independent orders
-//
+
 
 router.post("/register-new-test-data", upload.any(), async (req, res) => {
 	try {
 		console.log("Registration data", req.body);
 		const count = await testOrdersModel.countDocuments();
-
+		const nextId = await getNextOrderId();
 
 		const { providerId } = req.body;
 		let checkProvider = false;
 		let checkInvoice = false;
+		let hasCoupon = false;
+		let hasDiscount = false;
 		if (providerId && providerId !== "undefined") {
 			const providerMatch = await providerModel.findOne({ _id: providerId });
 			if (providerMatch) checkProvider = true;
 			if(req.body.isInvoiced && req.body.isInvoiced === 'true') checkInvoice = true;
 		}
 
+		if(!checkProvider){
+		    if(req.body.coupon){
+			hasCoupon = true;
+		    }
+		}
+
 		const post = await postModel.findOne({postType:"669a3a1f348f5b66bf71bfe2", postName:"ColoHealth"});
 		console.log("########################\n\n",post);
 		if(!post) return res.status(400).json({success: false, msg:"Product not found to place order"});
+		let amount = post.postData.productPrice;
+		// if has discount then process discount first
 
+		if(hasCoupon){
+		    const productPrice = post.postData.productPrice;
+		    const couponMatch = await couponModel.findOne({couponCode: req.body.coupon});
+		    if(couponMatch){
+			const discount = productPrice * (couponMatch.couponDiscount/100);
+			const max = couponMatch.maximumAllowedDiscount;
+			if(max) amount = discount >= max ? productPrice-max : productPrice-discount;
+			else amount = productPrice-discount;
+			hasDiscount = true;
+		    } else {
+			hasDiscount = false;
+			amount = productPrice
+		    }
+		}
 
 		const newRegistration = new testOrdersModel({
 			providerId: (req.body.providerId && checkProvider) ? req.body.providerId : 'NULL',
-			orderId: `${11500 + count + 1}`,
+			orderId: nextId,
 			firstName: req.body.firstName,
 			lastName: req.body.lastName,
 			streetAddress: req.body.streetAddress,
@@ -191,6 +232,10 @@ router.post("/register-new-test-data", upload.any(), async (req, res) => {
 			paymentConfirmed: (checkInvoice && checkProvider) ? true : false,
 			paymentInformation: {
 				status: "PENDING",
+				amount,
+				hasDiscount,
+				productPrice: post.postData.productPrice,
+				couponUsed: hasDiscount ? req.body.coupon : "NULL", 
 				transactionId: (checkInvoice && checkProvider) ? "INVOICED" : "PENDING",
 			}
 		});
@@ -232,7 +277,7 @@ router.post("/register-new-test-data", upload.any(), async (req, res) => {
 			} else {
 				res.status(200).json({ code: response.token, regid: response.regid })
 			}
-		}, newRegistration._id, paymentVerificationToken, post.postData.productPrice);
+		}, newRegistration._id, paymentVerificationToken, amount);
 
 	} catch (error) {
 		console.log(error);
@@ -266,6 +311,103 @@ router.get("/download-rec-rpt", async (req, res) => {
 	}
 })
 
+router.get("/download-welcome-pdf", async (req, res) => {
+        try {
+                const providerId = req.query.pid;
+                console.log("DOWNLOADING SCRIPT", req.query);
+                if(!providerId) return res.status(400).json({success: false, msg:"order id/provider id not found"});
+	
+		const customizationData = await customizationModel.findOne({});
+
+
+ 
+
+                const directoryPath = path.join(__dirname,"../../recforms");
+                const files = fs.readdirSync(directoryPath);
+                const requiredFile = files.filter(file => file.startsWith(`${customizationData.portalWelcomePDF}`))[0];
+                const filePath = path.join(__dirname,"../../recforms", requiredFile);
+                console.log(filePath)
+                res.download(filePath, requiredFile, (err) => {
+                        if (err) {
+                                console.error('Error downloading the file:', err);
+                                res.status(500).send('Error downloading the file.');
+                        }
+                });
+        } catch (error) {
+                console.log(error);
+                res.status(500).json({ success: false, error });
+        }
+})
+
+router.get("/download-info-noteleg", async (req, res) => {
+        try {
+
+                const customizationData = await customizationModel.findOne({});
+
+                const directoryPath = path.join(__dirname,"../../recforms");
+                const files = fs.readdirSync(directoryPath);
+                const requiredFile = files.filter(file => file.startsWith(`${customizationData.notEligiblePDF}`))[0];
+                const filePath = path.join(__dirname,"../../recforms", requiredFile);
+                console.log(filePath)
+                res.download(filePath, requiredFile, (err) => {
+                        if (err) {
+                                console.error('Error downloading the file:', err);
+                                res.status(500).send('Error downloading the file.');
+                        }
+                });
+        } catch (error) {
+                console.log(error);
+                res.status(500).json({ success: false, error });
+        }
+})
+
+router.post("/noteleg-info-submit", async (req, res) => {
+        try {
+		const customizationData = await customizationModel.findOne({});
+
+                const directoryPath = path.join(__dirname,"../../recforms");
+                const files = fs.readdirSync(directoryPath);
+                const requiredFile = files.filter(file => file.startsWith(`${customizationData.notEligiblePDF}`))[0];
+                const filePath = path.join(__dirname,"../../recforms", requiredFile);
+
+		const transporter = nodemailer.createTransport({
+        host: 'smtp.gmail.com',
+        port: 587,
+        secure: false, // true for 465, false for other ports
+        auth: {
+                user: `${process.env.SMTP_MAIL}`, // generated user
+                pass: `${process.env.SMTP_MAIL_PSWD}`  // generated password
+        }
+});
+const ip = "http://174.138.76.145/" //change this when you change the ip address
+
+
+const mailOptions = {
+        from: 'hrashikeshapandey@gmail.com',
+        to: email,
+        subject: 'Welcome to New Day Diagnostics!',
+        attachments: [
+                {
+                        filename: `ColoHealth_Eligibility_Information.pdf`, // The name of the attachment file
+                        path: filePath
+                }
+        ],
+        html:``
+}
+
+transporter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+                console.error(error);
+        } else {
+                log('Email sent: ' + info.response);
+        }
+});
+
+        } catch (error) {
+                console.log(error);
+                res.status(500).json({ success: false, error });
+        }
+})
 
 router.post("/register-provider", upload.single("profileImage"), async (req, res) => {
 	try {
@@ -307,7 +449,7 @@ router.post("/get-orders-for-provider", async(req, res) => {
 		const match = await providerModel.findOne({_id: providerId});
 		if(!match) return res.status(400).json({success: false, msg:"cannot find provider"});
 		const orders = await testOrdersModel.find({providerId: match._id.toString(), orderConfirmation: true});
-		return res.status(200).json({success: true, orders:orders.map(item => ({orderId: item.orderId, _id:item._id.toString(), firstName: item.firstName, lastName: item.lastName, dob: item.dob}))});
+		return res.status(200).json({success: true, orders:orders.map(item => ({orderId: item.orderId, _id:item._id.toString(), firstName: item.firstName, lastName: item.lastName, dob: item.dob, testStatus: item.testStatus, testingStatusNotes: item.testingStatusNotes}))});
 		
 	} catch (error) {
 		console.log(error);
@@ -384,7 +526,12 @@ router.get("/get-scheduled-times", async (req, res) => {
 	try {
 		console.log("This endpoint is called : getting scheduled times");
 		const today = new Date();
-		const matches = await testOrdersModel.find({ scheduledAt: { $gt: today } });
+		let matches = await testOrdersModel.find({}).lean();
+		matches = matches.filter((item)=>{
+			let dt = new Date(item.scheduledAt);
+			if(dt >= today) return true;
+			else return false;
+		})
 		const blockedTimes = matches.map(item => item.scheduledAt);
 		res.status(200).json({ success: true, blockedTimes });
 	} catch (error) {

@@ -1,5 +1,5 @@
 <div style="width: 100%;height: 100%;padding: 15px; overflow-y: auto;">
-	<div>
+	<div style="padding-bottom:50px;">
 		<div style="display: flex; align-items: center;gap: 15px;">
 			<h3 style="font-size: 18px;font-weight: 500;">Order Details</h3>
 		</div>
@@ -27,6 +27,12 @@
 					</td>
 				</tr>
 				<tr>
+                                        <td>Order Status</td>
+                                        <td style="padding:0px;text-transform:uppercase;font-weight:600;color:<%= order.testStatus === 'Testing Complete' ? '#ffffff': order.testStatus === 'Rejected' ? '#ffffff' : '#2271b1' %>;">
+						<span style="height:100%;margin:0;display:inline-block;padding:4px 10px;background-color:<%= order.testStatus === 'Testing Complete' ? '#059669': order.testStatus === 'Rejected' ? '#9f1239' : 'transparent' %>;"><%= order.testStatus %></span>
+                                        </td>
+                                </tr>
+				<tr>
 					<td>First Name</td>
 					<td>
 						<%= order.firstName %>
@@ -34,7 +40,7 @@
 				</tr>
 				<tr>
 					<td>Last Name</td>
-					<td style="font-weight: 600;color: green;">
+					<td style="font-weight: 600;">
 						<%= order.lastName %>
 					</td>
 				</tr>
@@ -90,6 +96,32 @@
 				</tr>
 			</tbody>
 		</table>
+
+		<div style="display: flex; align-items: center;gap: 15px;margin-top: 25px;">
+                        <h3 style="font-size: 18px;font-weight: 500;">Test Status : <span style="color:<%= order.testStatus === 'Testing Complete' ? '#16a34a': order.testStatus === 'Rejected' ? '#dc2626' : '#2271b1' %>;"><%= order.testStatus %></span></h3>
+                </div>
+		<form action="/api/v1/manage/update-order-status" method="post" style="width:30%">
+                                                <select name="testStatus" class="form-select" >
+                                                        <option <%= order.testStatus === 'In Transit' && 'selected' %>  value="In Transit" >In Transit</option>
+                                                        <option <%= order.testStatus === 'Testing Complete' && 'selected' %>  value="Testing Complete" >Testing Complete</option>
+                                                        <option <%= order.testStatus === 'Rejected' && 'selected' %>  value="Rejected" >Rejected</option>
+                                                </select>
+                                                <input type="hidden" name="orderId" value="<%= order._id %>" >
+                                                <button class="button-secondary-blue" style="margin-top:15px;background-color:white;font-weight:600">Update</button>
+                                                </form>
+
+
+		<div style="display: flex; align-items: center;gap: 15px;margin-top: 25px;">
+                        <h3 style="font-size: 18px;font-weight: 500;">Test Status Notes :</h3>
+                </div>
+                <form action="/api/v1/manage/update-order-status-notes" method="post" style="width:55%">
+			<label for="test-status-notes">Notes</label><br>
+			<textarea name="testingStatusNotes"  id="test-status-notes"><%= order.testingStatusNotes %></textarea>
+			<input type="hidden" name="orderId" value="<%= order._id %>" >
+                        <button class="button-secondary-blue" style="margin-top:15px; background-color:white;font-weight:600">Update</button>
+                </form>
+
+
 		<div style="display: flex; align-items: center;gap: 15px;margin-top: 25px;">
 			<h3 style="font-size: 18px;font-weight: 500;">Payment Details</h3>
 		</div>
@@ -122,4 +154,19 @@
 			</tbody>
 		</table>
 	</div>
+<script>
+window.addEventListener("DOMContentLoaded", ()=>{
+	 const textareaElements = document.querySelectorAll('textarea');
+console.log('HERE TEXTAREA ELEMENTS',textareaElements);
+                        textareaElements.forEach(textarea => {
+                                CKEDITOR.replace(textarea, {
+                                        on: {
+                                                instanceReady: function (evt) {
+                                                        evt.editor.textareaName = textarea.getAttribute("name");
+                                                }
+                                        }
+                                });
+                        });
+})
+</script>
 </div>

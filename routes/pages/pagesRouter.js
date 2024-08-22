@@ -111,12 +111,37 @@ router.get("/show-orders-by-provider/:providerId", verifyLogin, pageController.r
 router.get("/render-create-new-provider", verifyLogin, pageController.renderCreateNewProvider)
 router.post("/add-new-provider", verifyLogin, uploader.any(), pageController.createNewProvider)
 router.get("/render-update-provider/:providerId", verifyLogin, pageController.renderUpdateProvider)
+
+// data exports
 router.get("/download-provider-orders/:providerId", verifyLogin, pageController.downloadProviderOrders);
+router.post("/download-customer-dateranged-exports", verifyLogin, pageController.downloadCustomerOrders_DateRanged);
+router.post("/download-provider-dateranged-exports", verifyLogin, pageController.downloadProviderOrders_DateRanged);
+router.post("/download-provider-dateranged-exports", verifyLogin, pageController.downloadProviderOrders_DateRanged);
+router.post("/download-provider-all-exports", verifyLogin, pageController.downloadProviderOrders_All);
+router.post("/download-customer-all-exports", verifyLogin, pageController.downloadCustomerOrders_All);
+
+
 router.post("/update-provider", verifyLogin, pageController.updateProvider)
+router.get("/delete-provider", verifyLogin, pageController.deleteProvider)
 router.post("/update-provider-manual", verifyLogin, pageController.updateProviderManual)
 router.get("/render-pricing-manager", verifyLogin, pageController.managePricingAndData);
 router.post("/update-pricing-manager", verifyLogin, pageController.updatePricingData);
+router.post("/update-order-status", verifyLogin, pageController.updateOrderStatus);
+router.post("/update-order-status-notes", verifyLogin, pageController.updateOrderStatusNotes);
+router.get("/render-add-manual-order", verifyLogin, pageController.renderAddManualOrder);
+router.post("/add-manual-order-provider", verifyLogin, uploader.any(), pageController.addManualOrder);
+router.post("/search-order-by-id", verifyLogin, pageController.searchOrderByOrderId);
+router.post("/search-customer-orders", verifyLogin, pageController.searchCustomerOrdersByOrderId)
+router.get("/render-customization-page", verifyLogin, pageController.renderCustomizationPage);
+router.post("/update-customization", verifyLogin, uploader.any(), pageController.updateCustomizationData);
+router.post("/apply-bulk-status-action", verifyLogin, pageController.applyBulkStatusAction);
+router.post("/add-new-coupon", verifyLogin, pageController.addNewCoupon);
+router.get("/render-addnewcoupon", verifyLogin, pageController.renderAddNewCoupon);
 
+
+// routes for data exports
+
+router.get("/render-data-exports", verifyLogin, pageController.renderDataExporter)
 
 router.get("/render-price-manager", verifyLogin, pageController.renderPriceManagerPage);
 router.get('/product/:productId/manage-price',verifyLogin, pageController.renderProductPriceManager);
@@ -140,6 +165,7 @@ router.get("/render-add-coupon-page", verifyLogin, pageController.renderAddCoupo
 router.get("/all-coupons", verifyLogin, pageController.renderAllCoupons);
 router.get("/delete-coupon/:couponId", verifyLogin, pageController.deleteCoupon);
 router.get("/edit-coupon/:couponId", verifyLogin, pageController.editCoupon);
+router.post("/update-coupon", verifyLogin, pageController.updateCoupon);
 
 
 // HRASHIKESH CODE CHANGES MERGE :: END

@@ -58,8 +58,8 @@
 					<div class="collapse show" id="overviewCollapse">
 						<div style="border-top: 1px solid rgba(0,0,0,0.25);padding: 10px;">
 							<div style="display: flex;align-items: center;padding: 5px;">
-								<div style="width: 50%;font-size: 14px;"><i class="fa-solid fa-thumbtack" style="color: #8a8989;"></i> <a href="" style="color: #2271b1;">121 Posts</a></div>
-								<div style="width: 50%;font-size: 14px;"><i class="fa-solid fa-copy" style="color: #8a8989;"></i> <a href="" style="color: #2271b1;">7 Pages</a></div>
+								<div style="width: 50%;font-size: 14px;"><i class="fa-solid fa-thumbtack" style="color: #8a8989;"></i> <a href="" style="color: #2271b1;"><%= totalOrders === 1 ? '1 Test Done': (totalOrders+' Tests done') %></a></div>
+								<div style="width: 50%;font-size: 14px;"><i class="fa-solid fa-copy" style="color: #8a8989;"></i> <a href="" style="color: #2271b1;"><%= products === 1 ? '1 Product':(products+ ' Products')  %></a></div>
 							</div>
 							<p style="margin: 10px 0px; font-size: 13px;">Learn more about the stats by visiting the <a href="#" style="color: #2271b1;text-decoration: underline;">documentation</a></p>
 						</div>

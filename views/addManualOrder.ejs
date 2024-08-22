@@ -1,0 +1,164 @@
+<div style="width: 100%; height: 100%;background-color: #f0f0f1;display: flex;align-items:flex-start;justify-content: space-between;position: relative; padding-bottom: 100px;">
+
+
+	<form action="/api/v1/manage/add-manual-order-provider" enctype="multipart/form-data"  method="POST" style="width: 36%;padding: 15px;display: flex;flex-direction: column;height: 93vh;overflow-y: scroll;">
+		<h1 style="font-size: 18px;font-weight: 500;">
+			Add Manual Order
+		</h1>
+
+			<label class="mt-3" for="" style="text-transform: capitalize;margin-bottom: 5px;" >Choose a Provider:</label>
+                        <select class="form-select" required  style="border: 1px solid rgba(0,0,0,0.2);" id="providerType" name="providerId" >
+                               <option value="">Choose a Provider</option>
+				<% for(let provider of providers) { %>
+					<option value="<%= provider.providerId %>"><%= provider.firstName + " " + provider.lastName  %></option>
+				<% } %>
+                        </select>
+
+			<label class="mt-3" for="" style="text-transform: capitalize;margin-bottom: 5px;" >Scheduled At:</label>
+                        <input type="datetime-local" class="form-control" style="border: 1px solid rgba(0,0,0,0.2);padding: 6px 16px;" id="scheduledAt" name="scheduledAt" >
+
+			<label class="mt-3" for="" style="text-transform: capitalize;margin-bottom: 5px;" >First Name:</label>
+			<input type="text" class="form-control" style="border: 1px solid rgba(0,0,0,0.2);" id="firstName" name="firstName" >
+
+			<label class="mt-3" for="" style="text-transform: capitalize;margin-bottom: 5px;" >Last Name:</label>
+			<input type="text" class="form-control" style="border: 1px solid rgba(0,0,0,0.2);" id="lastName" name="lastName" >
+			
+			<label class="mt-3" for="" style="text-transform: capitalize;margin-bottom: 5px;" >Email:</label>
+			<input type="text" class="form-control"  style="border: 1px solid rgba(0,0,0,0.2);" id="email" name="email" >
+			<span style="color: rgba(0,0,0,0.7);font-size: 13px;font-weight: 500;">The email must be unique.</span>
+
+			<label class="mt-3" for="" style="text-transform: capitalize;margin-bottom: 5px;" >D.o.B:</label>
+			<input type="date" class="form-control" style="border: 1px solid rgba(0,0,0,0.2);padding: 6px 16px;" id="dob" name="dob" >
+
+			<label class="mt-2" for="" style="text-transform: capitalize;margin-bottom: 5px;" >Phone:</label>
+                        <input type="text" pattern="[\d\s\+\-\(\)]*" oninput="this.value = this.value.replace(/[^0-9\s\+\-\(\)]/g, '');" class="form-control" style="border: 1px solid rgba(0,0,0,0.2);" id="phone" name="phone" >
+
+
+			<label class="mt-3" for="" style="text-transform: capitalize;margin-bottom: 5px;" >Street Address:</label>
+			<input type="text" class="form-control"  style="border: 1px solid rgba(0,0,0,0.2);" id="address1" name="streetAddress" >
+
+			<label class="mt-3" for="" style="text-transform: capitalize;margin-bottom: 5px;" >City:</label>
+			<input type="text" class="form-control"   style="border: 1px solid rgba(0,0,0,0.2);" id="city" name="city" >
+
+			<label class="mt-3" for="" style="text-transform: capitalize;margin-bottom: 5px;" >State:</label>
+			<input type="text" class="form-control"   style="border: 1px solid rgba(0,0,0,0.2);" id="state" name="state" >
+
+			<label class="mt-3" for="" style="text-transform: capitalize;margin-bottom: 5px;" >ZIP Code:</label>
+			<input type="text" class="form-control"  style="border: 1px solid rgba(0,0,0,0.2);" id="zip" name="zip" >
+			
+			<label class="mt-3" for="" style="text-transform: capitalize;margin-bottom: 5px;" >Gender:</label>
+			<div class="form-check form-check-inline">
+  				<input class="form-check-input" type="radio" name="gender" id="inlineRadio1" value="Male">
+  				<label class="form-check-label" for="inlineRadio1">Male</label>
+			</div>
+			<div class="form-check form-check-inline">
+  				<input class="form-check-input" type="radio" name="gender" id="inlineRadio2" value="Female">
+  				<label class="form-check-label" for="inlineRadio2">Female</label>
+			</div>
+			<div class="form-check form-check-inline">
+  				<input class="form-check-input" type="radio" name="gender" id="inlineRadio3" value="Prefer Not To Say" >
+  				<label class="form-check-label" for="inlineRadio3">Prefer Not To Say</label>
+			</div>
+
+
+			<label class="mt-3" for="" style="text-transform: capitalize;margin-bottom: 5px;" >Race:</label>
+                        <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="race" id="inlineRadio4" value="American Indian">
+                                <label class="form-check-label" for="inlineRadio4">American Indian</label>
+                        </div>
+
+                        <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="race" id="inlineRadio5" value="Alaskan Native">
+                                <label class="form-check-label" for="inlineRadio5">Alaskan Native</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="race" id="inlineRadio6" value="Asian" >
+                                <label class="form-check-label" for="inlineRadio6">Asian</label>
+                        </div>
+			<div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="race" id="inlineRadio7" value="White" >
+                                <label class="form-check-label" for="inlineRadio7">White</label>
+                        </div>
+			<div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="race" id="inlineRadio8" value="African American" >
+                                <label class="form-check-label" for="inlineRadio8">African American</label>
+                        </div>
+			<div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="race" id="inlineRadio9" value="Native American" >
+                                <label class="form-check-label" for="inlineRadio9">Native American</label>
+                        </div>
+			<div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="race" id="inlineRadio10" value="Pacific Islander" >
+                                <label class="form-check-label" for="inlineRadio10">Pacific Islander</label>
+                        </div>
+			<div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="race" id="inlineRadio11" value="Other" >
+                                <label class="form-check-label" for="inlineRadio11">Other</label>
+                        </div>
+			<div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="race" id="inlineRadio12" value="Prefer Not To Say" >
+                                <label class="form-check-label" for="inlineRadio12">Prefer Not To Say</label>
+                        </div>
+
+
+			<label class="mt-3" for="" style="text-transform: capitalize;margin-bottom: 5px;" >Ethnicity:</label>
+                        <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="ethnicity" id="inlineRadio13" value="Hispanic / Latino">
+                                <label class="form-check-label" for="inlineRadio13">Hispanic / Latino</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="ethnicity" id="inlineRadio14" value="Not Hispanic / Latino">
+                                <label class="form-check-label" for="inlineRadio14">Not Hispanic / Latino</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="ethnicity" id="inlineRadio15" value="Prefer Not To Say" >
+                                <label class="form-check-label" for="inlineRadio15">Prefer Not To Say</label>
+                        </div>
+				
+				
+			<label class="mt-3" for="" style="text-transform: capitalize;margin-bottom: 5px;" >Requisition Form:</label>
+			<div class="mb-3">
+  			  <input class="form-control"  type="file" id="requisitionPDF" name="requisitionPDF" required>
+			</div>
+
+			<button class="button-main button-main-md" type="submit" style="border-radius: 2px;margin-top: 10px;">Add Manual Order</button>
+			
+	</form>
+</div>
+
+<script>
+	
+	function generateproductId() {
+			
+			const postTypeName = document.getElementById("reviewerName").value;
+			const slugElement = document.getElementById("productId");
+			if(!postTypeName) return slugElement.value ="";
+			const dt = new Date();
+			const mil = "__"+dt.getTime();
+			const slug = "crp__"+postTypeName.toLowerCase()?.split(" ").join("")+mil;
+			slugElement.value = slug;
+	}
+
+	// JavaScript state management for real-time updates
+	document.getElementById('reviewerName').addEventListener('input', function(event) {
+			document.getElementById('couponCodePlaceholder').innerText = event.target.value;
+	});
+	document.getElementById('reviewContent').addEventListener('input', function(event) {
+			document.getElementById('reviewContentPlaceholder').innerText = event.target.value;
+	});
+
+	document.getElementById('reviewContent').addEventListener('input', function(event) {
+			document.getElementById('reviewContentPlaceholderSecond').innerText = event.target.value;
+	});
+
+	var swiper = new Swiper(".mySwiper", {
+		spaceBetween: 20,
+		slidesPerView: 2,
+		loop: true,
+		navigation: {
+			nextEl: ".swiper-button-next",
+			prevEl: ".swiper-button-prev",
+		},
+
+	});
+</script>

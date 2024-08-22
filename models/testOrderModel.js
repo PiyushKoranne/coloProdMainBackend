@@ -1,8 +1,8 @@
 const mongoose = require("mongoose");
 
 const TestOrderSchema = new mongoose.Schema({
-	orderId: String,
-	scheduledAt : String,
+	orderId: { type: Number, unique: true },
+	scheduledAt : {type: String, default: ""},
 	registrationConsent : Boolean,
 	firstName : String,
 	lastName : String,
@@ -25,12 +25,25 @@ const TestOrderSchema = new mongoose.Schema({
 		status: {
 			type: String,
 			enum: ['PENDING', 'PROCESSING', 'COMPLETED', 'FAILED', 'CANCELLED']
-		},	
+		},
+		amount: Number,
+		hasDiscount: Boolean,
+		productPrice: Number,
+		couponUsed: String,
 		transactionId:String,
 		paymentVerificationHash: String,
 	},
+	testStatus: {
+		type: String,
+		enum: ["Testing Complete", "Rejected", "In Transit"],
+		default:"In Transit"
+	},
+	testingStatusNotes: {
+		type: String,
+		default: "",
+	},
 	providerId: String
-})
+}, {timestamps: true })
 
 const testOrdersModel = mongoose.model("TestOrders", TestOrderSchema);
 

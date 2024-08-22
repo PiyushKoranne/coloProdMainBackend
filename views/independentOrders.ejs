@@ -8,7 +8,7 @@
 				<p style="font-size: 13px;margin: 0;"> <a class="nrm-txt" style="font-weight: 400;text-decoration: none;color: #484848;" href="/api/v1/manage/show-posts-by-post-type">All <span style="color: #969696;" >(<%= orders?.length %>)</span></a> </p>
 
 				<div style="display: flex;align-items: center;gap: 5px;">
-					<form action="/api/v1/manage/search-order-by-id" method="post">
+					<form action="/api/v1/manage/search-customer-orders" method="post">
 						<input style="padding: 5px;outline: none;border: 1px solid rgba(0,0,0,0.25);" type="text" name="orderId" id="orderId">
 						<button class="button-secondary-blue" style="border-radius: 2px;">Search Orders By Id</button>
 					</form>	
@@ -51,16 +51,34 @@
 			background-color: #fff;
 		} 
 	</style>
-	
+	<div style="background: linear-gradient(to bottom, #f7f7f7 5%, #ffffff,  #f7f7f7 95% );border:1px solid rgba(0,0,0,0.3); border-bottom:0px;display:flex;align-items:center;padding:8px 15px">
+		<form style="display:flex;align-items:center; " onsubmit="handleBulkActionSubmit(event)">
+		<select class="form-select" id="bulkActionSelect" style="font-size: 13px;border: 1px solid #8C8F94;border-radius: 2px;width: 150px;" aria-label="Default select example">
+                                                <option value="" selected>Bulk Actions</option>
+                                                <option value="In Transit">In Transit</option>
+                                                <option value="Testing Complete">Testing Complete</option>
+                                                <option value="Rejected">Rejected</option>
+                                        </select>
+		<button class="button-secondary-blue" style="background-color:#ffffff;margin-left:5px;box-shadow:1px 1px 1px 1px rgba(0,0,0,0.1);border-radius:0px">Update</button>
+		</form>
+	</div>
 	<% if(orders?.length> 0) { %>
 		<table width="100%" cellspacing="0" cellpadding="0" style="border: 1px solid rgba(0,0,0,0.25);">
 			<thead style="border-bottom: 2px solid #d8d8d8;background-color: #fff;">
 				<tr>
 					<th>
 						<div style="display: flex; align-items: center; justify-content: start;padding: 10px;">
-							<h3 style="font-size: 14px;margin: 0px;">Order Id</h3>
+							<input class="form-check-input" style="border:1px solid #2271b1;" onclick="handleAllOrdersChecked(event)"  type="checkbox" value="allOrders" id="flexCheckDefault">
+							<label class="form-check-label" style="text-transform:capitalize;margin-left:5px;" for="flexCheckDefault">
+							    Select All
+  							</label>
 						</div>
 					</th>
+					 <th>
+                                                <div style="display: flex; align-items: center; justify-content: start;padding: 10px;">
+                                                        <h3 style="font-size: 14px;margin: 0px;">Order Id</h3>
+                                                </div>
+                                        </th>
 					<th>
 						<div style="display: flex; align-items: center; justify-content: start;padding: 10px;">
 							<h3 style="font-size: 14px;margin: 0px;">Name</h3>
@@ -87,6 +105,11 @@
 						</div>
 					</th>
 					<th>
+                                                <div style="display: flex; align-items: center; justify-content: start;">
+                                                        <h3 style="font-size: 14px;margin: 0px;">Test Status</h3>
+                                                </div>
+                                        </th>
+					<th>
 						<div style="display: flex; align-items: center; justify-content: start;">
 							<h3 style="font-size: 14px;margin: 0px;">Actions</h3>
 						</div>
@@ -99,11 +122,16 @@
 					<tr style="border-bottom: 1px solid rgba(0,0,0,0.25);">
 						<td style="padding: 5px 10px;">
 							<div style="font-size: 13px;">
-								<span style="color: #2271B7;font-weight: 500;">
-									<%= post.orderId %>
-								</span>
+								<input class="form-check-input" style="border:1px solid #2271b1;"  onclick="toggleBulkList(event, '<%= post._id %>')"  type="checkbox" value="<%= post.orderId %>" id="<%= post._id %>">
 							</div>
 						</td>
+						<td style="padding: 5px 10px;">
+                                                        <div style="font-size: 13px;">
+                                                                <span style="color: #2271B7;font-weight: 500;">
+                                                                        <%= post.orderId %>
+                                                                </span>
+                                                        </div>
+                                                </td>
 						<td style="padding: 5px 10px;">
 							<div style="font-size: 13px;">
 								<span style="font-weight: 400;color: #2271B7;">
@@ -139,6 +167,13 @@
 								</span>
 							</div>
 						</td>
+						<td style="padding: 5px 10px;">
+                                                        <div style="font-size: 13px;">
+                                                                <span style="display:inline-block;padding:5px 15px;font-weight: 600;background-color: <%= post.testStatus === "Testing Complete" ? '#059669':'transparent' %>; color:<%= post.testStatus === "Testing Complete" ? '#ffffff':'#000000' %>">
+                                                                        <%= post.testStatus %>
+                                                                </span>
+                                                        </div>
+                                                </td>
 						
 						<td style="padding: 5px 10px;">
 							<div style="font-size: 13px;">
@@ -160,6 +195,7 @@
 		<% } %>
 </div>
 <script>
+	let bulkActionGLB = [];
 	function closeMessage(buttonElement) {
 		const container = buttonElement.closest(".msg");
 		container.style.display = 'none';
@@ -175,6 +211,67 @@
 			parent.style.display = 'none'
 		}
 	}
+
+	function handleBulkActionSubmit(e) {
+		e.preventDefault();
+		const bulkActionSelect = document.getElementById('bulkActionSelect');
+		if(bulkActionSelect.value === "") return;
+		else if( bulkActionGLB.length === 0) return;
+		else {
+			fetch("/api/v1/manage/apply-bulk-status-action", {
+				method:"post",
+				headers: {
+                   		  "Content-Type": "application/json"
+                		},
+				body: JSON.stringify({orders: bulkActionGLB, status: bulkActionSelect.value})
+			})
+			.then(res => res.json())
+			.then(data => {
+				console.log('request bulk made',data);
+				if(data.success === true){
+				  window.location.reload();
+				}
+			}).catch(err => {console.log(err)})
+		}
+	}
+
+	function toggleBulkList(event, orderId) {
+		if(event.target.checked === true){
+			bulkActionGLB.push(orderId);
+		} else if (event.target.checked === false) {
+			bulkActionGLB = bulkActionGLB.filter(item => item !== orderId);
+		}
+		console.log(bulkActionGLB);
+	}
+
+	function handleAllOrdersChecked(event){
+		if(event.target.checked === true){
+			const data = <%- JSON.stringify(orders) %>;
+			bulkActionGLB = data.map(item=>item._id);
+			handleChecking();
+		} else if (event.target.checked === false){
+			bulkActionGLB = [];
+			handleChecking();
+		}	
+	}
+
+	function handleChecking(){
+		if(bulkActionGLB.length === 0){
+			const data = <%- JSON.stringify(orders) %>;
+			const order_ids = data.map(item=>item._id);
+			order_ids.forEach(id => {
+				const checkboxItem = document.getElementById(id);
+				checkboxItem.checked = false;
+			})
+		} else {
+			bulkActionGLB.forEach(item => {
+				const checkboxItem = document.getElementById(item);
+				checkboxItem.checked = true;
+			})
+		}
+	}
+
+	
 
 	function showOrder(orderId) {
 		window.location.href = `/api/v1/manage/show-order/${orderId}`;

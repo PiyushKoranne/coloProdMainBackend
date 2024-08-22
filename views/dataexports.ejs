@@ -1,0 +1,102 @@
+<div style="width: 100%; height: 100%;background-color: #f0f0f1;display: flex;align-items:flex-start;justify-content: space-between;position: relative; padding-bottom: 100px;">
+
+	<div style="width: 100%;padding: 15px;display: flex;flex-direction: column;height: 93vh;overflow-y: scroll;">
+		<h1 style="font-size: 18px;font-weight: 500;">
+			<i class="fa-solid fa-download" style="color: #8a8989;margin-right:5px;"></i>Data Exports
+		</h1>
+		 <div class="dashboard-left-card-wr">
+
+                        <div class="atA-glance-card">
+                                <div>
+                                <div style="width: 100%;display: flex;"  data-bs-toggle="collapse" data-bs-target="#overviewCollapse" aria-expanded="false" aria-controls="overviewCollapse">
+                                        <h2 class="dashboard-card-heading" >All Orders</h2>
+                                        <button class="dashboard-card-dropdown-btn"><i class="fa-solid fa-caret-down" style="color: #959595;"></i></button>
+                                </div>
+                                        <div class="collapse show" id="overviewCollapse">
+                                                <div style="border-top: 1px solid rgba(0,0,0,0.25);padding: 10px;">
+							<form method="post" action="/api/v1/manage/download-customer-dateranged-exports">
+                                                        <div style="display: flex;align-items: center;padding: 5px;flex-wrap:wrap;width:100%;">
+                                                                <div style="width: 50%;font-size: 14px;">
+								  <label for="" style="text-transform: capitalize;margin-bottom: 5px;" >Start Date:</label>
+					                          <input type="date" class="form-control" required style="border: 1px solid rgba(0,0,0,0.2);padding: 6px 16px;" name="startDate"> 
+								</div>
+                                                                <div style="width: 50%;font-size: 14px;">
+								  <label for="" style="text-transform: capitalize;margin-bottom: 5px;" >End Date:</label>
+                                                                  <input type="date" class="form-control" required style="border: 1px solid rgba(0,0,0,0.2);padding: 6px 16px;" name="endDate">
+								</div>
+								<div style="width:100%;margin-top:10px;">
+								  <button class="button-secondary-blue"><i class="fa-solid fa-download" style="color: #8a8989;margin-right:5px;"></i>Download</button>
+								</div>
+                                                        </div>
+							</form>
+                                                        <p style="margin: 10px 0px; font-size: 13px;">To download the data for all the orders so far: </p>
+							<form method="post" action="/api/v1/manage/download-customer-all-exports">
+							<button class="button-secondary-blue"><i class="fa-solid fa-download" style="color: #8a8989;margin-right:5px;"></i>Download All Orders</button>
+							</form>
+                                                </div>
+                                        </div>
+                                </div>
+                        </div>
+
+			 <div class="page-activity-card">
+                                <div>
+                                <div style="width: 100%;display: flex;" data-bs-toggle="collapse" data-bs-target="#pageActivityCollapse" aria-expanded="false" aria-controls="pageActivityCollapse">
+                                        <h2 class="dashboard-card-heading" >Provider Orders</h2>
+                                        <button class="dashboard-card-dropdown-btn"><i class="fa-solid fa-caret-down" style="color: #959595;"></i></button>
+                                </div>
+                                        <div class="collapse show" id="pageActivityCollapse">
+                                                <div style="border-top: 1px solid rgba(0,0,0,0.25);padding: 10px;">
+							<form method="post" action="/api/v1/manage/download-provider-dateranged-exports">
+                                                        <div style="display: flex;align-items: flex-start;flex-direction:column;padding: 5px;flex-wrap:wrap;width:100%;">
+								<div style="width:100%;font-size: 14px;padding:5px 0px;">
+								  <select name="providerId" style="width:100%;font-size:14px;" required class="form-select">
+								    <option value="" >Choose Provider</option>
+                                                                    <% for(let provider of providers) { %>
+									<option value="<%= provider._id %>" ><%= provider.firstName+" "+provider.lastName+" - "+provider.providerType.toUpperCase() %></option>
+								    <% } %>
+								  </select>
+								</div>
+                                                                <div style="width: 50%;font-size: 14px;">
+                                                                  <label for="" style="text-transform: capitalize;margin-bottom: 5px;" >Start Date:</label>
+                                                                  <input type="date" class="form-control" required  style="border: 1px solid rgba(0,0,0,0.2);padding: 6px 16px;" name="startDate">
+                                                                </div>
+                                                                <div style="width: 50%;font-size: 14px;">
+                                                                  <label for="" style="text-transform: capitalize;margin-bottom: 5px;" >End Date:</label>
+                                                                  <input type="date" class="form-control" required  style="border: 1px solid rgba(0,0,0,0.2);padding: 6px 16px;" name="endDate">
+                                                                </div>
+                                                                <div style="width:100%;margin-top:10px;">
+                                                                  <button class="button-secondary-blue"><i class="fa-solid fa-download" style="color: #8a8989;margin-right:5px;"></i>Download</button>
+                                                                </div>
+                                                        </div>
+							</form>
+                                                        <p style="margin: 10px 0px; font-size: 13px;">To download the data for all the orders so far: </p>
+							<form method="post" action="/api/v1/manage/download-provider-all-exports">
+							<select name="providerId" style="width:100%;font-size:14px;margin-bottom:10px" required class="form-select">
+                                                                    <option value="" >Choose Provider</option>
+                                                                    <% for(let provider of providers) { %>
+                                                                        <option value="<%= provider._id %>" ><%= provider.firstName+" "+provider.lastName+" - "+provider.providerType.toUpperCase() %></option>
+                                                                    <% } %>
+                                                                  </select>
+                                                        <button class="button-secondary-blue"><i class="fa-solid fa-download" style="color: #8a8989;margin-right:5px;"></i>Download All Orders</button>
+                                                </div>
+                                        </div>
+                                </div>
+                        </div>
+
+                </div>
+			
+	</div>
+</div>
+
+<script>
+	var swiper = new Swiper(".mySwiper", {
+		spaceBetween: 20,
+		slidesPerView: 2,
+		loop: true,
+		navigation: {
+			nextEl: ".swiper-button-next",
+			prevEl: ".swiper-button-prev",
+		},
+
+	});
+</script>

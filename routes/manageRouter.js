@@ -10,7 +10,7 @@ const postTypeModel = require('../models/postTypeModel');
 const {getFormattedDate, log} = require("../utils/utilFunctions");
 const { verifyAdmin } = require('../middlewares/verifyLogin');
 const adminModel = require('../models/adminModel');
-
+const testOrdersModel = require('../models/testOrderModel');
 
 // Data Management Logics:
 router.use("/auth/", authRouter);
@@ -31,6 +31,9 @@ router.get("/documentation", (req, res)=>{
 })
 router.get("/dashboard", verifyAdmin, async (req, res) => {
 	try {
+		const products = await postModel.countDocuments({postType:"669a3a1f348f5b66bf71bfe2"});
+		const testOrders = await testOrdersModel.countDocuments({});
+		console.log("rendering documents", products, testOrders);
 		const email = req.jwt.decoded?.email
 		const admin = await adminModel.findOne({email})
 		const quickDrafts = admin.quickDrafts
@@ -57,7 +60,9 @@ router.get("/dashboard", verifyAdmin, async (req, res) => {
 			message:req.flash("message"),
 			posts,
 			pages,
-			quickDrafts
+			quickDrafts,
+			products,
+			totalOrders:testOrders,
 		});
 	} catch (error) {
 		log(error);

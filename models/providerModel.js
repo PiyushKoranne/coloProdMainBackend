@@ -1,6 +1,10 @@
 const mongoose = require("mongoose");
 
 const ProviderSchema = new mongoose.Schema({
+	providerType: {
+		type: String,
+		enum:['portal','paper']
+	},
 	firstName: String,
 	mi: String,
 	lastName: String,

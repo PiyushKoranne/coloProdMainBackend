@@ -12,7 +12,9 @@
 						<input style="padding: 5px;outline: none;border: 1px solid rgba(0,0,0,0.25);" type="text" name="orderId" id="orderId">
 						<button class="button-secondary-blue" style="border-radius: 2px;">Search Orders By Id</button>
 					</form>
+					<% if(orders && orders.length > 0) { %>
 					<button onclick="downloadProviderOrderSheet('<%= providerId %>')" class="button-secondary-blue" style="border-radius: 2px;background-color:white;"> <i class="fa-solid fa-download"></i> Download</button>	
+					<% } %>
 				</div>
 			</div>
 			

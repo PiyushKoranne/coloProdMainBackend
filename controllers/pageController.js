@@ -4,7 +4,7 @@ const dataModel = require('../models/dataModel');
 const postTypeModel = require("../models/postTypeModel");
 const { categoryModel } = require('../models/categoryModel');
 const { v4: uuidv4 } = require('uuid');
-const { getLastTwelveMonths, getTrimmedObject } = require("../utils/utilFunctions");
+const { getLastTwelveMonths, getTrimmedObject, getNextOrderId } = require("../utils/utilFunctions");
 const adminModel = require('../models/adminModel');
 const ITEMS_PER_PAGE = 25;
 const Quotation = require("../models/quotationModel")
@@ -18,12 +18,18 @@ const { default: axios } = require('axios');
 const providerModel = require('../models/providerModel');
 const bcrypt = require("bcrypt");
 const testOrdersModel = require('../models/testOrderModel');
+const customizationModel = require("../models/customizationModel");
 const paymentModel = require("../models/paymentModel")
 const fsPromise = require('fs').promises;
 const path = require("path");
 const XLSX = require('xlsx');
+const nodemailer = require("nodemailer");
+const fs = require("fs");
+const generatePDF = require("../utils/pdfCreator.js")
+const pwdGen = require('generate-password');
 
-function fillOrderDetails(orderData, filePath) {
+
+function fillOrderDetails(orderData, filePath, isProvider, providerData) {
   const workbook = XLSX.readFile(filePath);
 
   // Get the first worksheet
@@ -80,14 +86,40 @@ function fillOrderDetails(orderData, filePath) {
     if (columnMapping[key]) {
       columnMapping[key].forEach((column) => {
         const cellAddress = column + (nextRow + 1); // Adjust for 0-based index
-        worksheet[cellAddress] = { v: orderData[key], t: 's' }; // Assuming all data is string
+        worksheet[cellAddress] = { v: String(orderData[key]), t: 's' }; // Assuming all data is string
       });
     }
   });
 
+
   // Update the worksheet range
   worksheet['!ref'] = XLSX.utils.encode_range(range.s, { c: range.e.c, r: nextRow });
 
+   if (isProvider && providerData) {
+    nextRow += 1; // Move to the next row
+    const providerMapping = {
+      'providerId': 'A',
+      'firstName': 'B',
+      'lastName': 'C',
+    };
+
+    Object.keys(providerMapping).forEach((key) => {
+      const column = providerMapping[key];
+      const cellAddress = column + (nextRow + 1); // Adjust for 0-based index
+      worksheet[cellAddress] = { v: String(providerData[key]), t: 's' }; // Assuming all data is string
+      // Add style to make the text blue and bold
+      worksheet[cellAddress].s = {
+        font: {
+          color: { rgb: '0000FF' },
+          bold: true
+        }
+      };
+    });
+
+    // Update the worksheet range after adding provider data
+    worksheet['!ref'] = XLSX.utils.encode_range(range.s, { c: range.e.c, r: nextRow });
+
+  }
 
   // Write the updated workbook to a new file or overwrite the existing file
   XLSX.writeFile(workbook, filePath);
@@ -104,6 +136,11 @@ exports.renderAddProject = async (req, res) => {
 	})
 }
 
+exports.renderDataExporter = async (req, res) => {
+	const allProviders = await providerModel.find({}, {password:0}) .lean();
+	 
+	res.render("dataexports", {providers: allProviders});
+}
 
 exports.addProject = async (req, res) => {
 	try {
@@ -157,6 +194,22 @@ exports.getPostTypesAndLinks = async (req, res) => {
 	}
 }
 
+exports.applyBulkStatusAction = async (req, res) => {
+	try {
+		const {orders, status} = req.body;
+		console.log(req.body);
+		if(!orders || !Array.isArray(orders) || !status) return res.status(400).json({success: false});
+		for(let item of orders){
+			await testOrdersModel.findOneAndUpdate({_id: item}, {
+			  $set:{ testStatus: status }
+			});
+		}
+		res.status(200).json({success: true});
+        } catch (error) {
+                log(error);
+                res.status(500).json({ success: true, message: "Server error", error: error });
+        }	
+}
 
 exports.renderAllPostTypes = async (req, res) => {
 	try {
@@ -733,8 +786,10 @@ exports.filterPosts = async (req, res) => {
 	try {
 		let posts;
 		const { filterCategory, filterDate } = req.body;
-		log('filtering posts\n', req.body);
+		console.log("Filtering posts by dates");
+		console.log(filterDate, filterCategory);
 		if (filterDate == "All Dates") {
+			console.log("Filtering by all dates");
 			if (filterCategory == "All Categories") {
 				posts = await postModel.find({ postType: req.params.posttypeid });
 			} else {
@@ -2238,8 +2293,18 @@ exports.renderAllProviders = async (req, res) => {
 
 exports.renderAllIndependentOrders = async (req, res) => {
 	try {
-		const { currentpage, searchquery, paginationtype } = req.query;
-		const providers = await testOrdersModel.find({providerId: 'NULL'});
+		const { currentpage, searchquery, paginationtype, filter, filterval } = req.query;
+		let providers;
+		if(filter && filterval){
+                        if(filter === "orderid"){
+                                providers = await testOrdersModel.find({providerId: 'NULL', orderId:filterval });
+                        } else if (filter === "name"){
+                                providers = await testOrdersModel.find({providerId: 'NULL'});
+                                providers = providers.filter(item => (filterval.toLowerCase().includes(item.firstName.toLowerCase())) || (filterval.toLowerCase().includes(item.lastName.toLowerCase())) || (filterval.toLowerCase().includes(item.firstName.toLowerCase()+" "+item.lastName.toLowerCase()) ))
+                        }
+                } else {
+			providers = await testOrdersModel.find({providerId: 'NULL'});
+		}
 		let numberOfPages;
 		let thisPage;
 		if (currentpage) thisPage = parseInt(currentpage) - 1;
@@ -2264,8 +2329,22 @@ exports.renderAllIndependentOrders = async (req, res) => {
 
 exports.renderAllInvoicedOrders = async (req, res) => {
         try {
-                const { currentpage, searchquery, paginationtype } = req.query;
-                const providers = await testOrdersModel.find({isInvoiced: true});
+                const { currentpage, searchquery, paginationtype, provider, filter, filterval } = req.query;
+		console.log("RENDERING INVOICE FILTERS",filter, filterval, typeof filterval);
+		let providers;
+		let allInvoicingOrders = await testOrdersModel.find({isInvoiced: true});
+		if(filter && filterval){
+			if(filter === "orderid"){
+				providers = await testOrdersModel.find({isInvoiced: true, orderId:filterval });
+			} else if (filter === "name"){
+				providers = await testOrdersModel.find({isInvoiced: true });
+				providers = providers.filter(item => (filterval.toLowerCase().includes(item.firstName.toLowerCase())) || (filterval.toLowerCase().includes(item.lastName.toLowerCase())) || (filterval.toLowerCase().includes(item.firstName.toLowerCase()+" "+item.lastName.toLowerCase()) ))
+			}
+		} else {
+			if(!provider) providers = allInvoicingOrders;
+			else if (provider) providers = await testOrdersModel.find({isInvoiced: true, providerId: provider });
+		}
+
                 let numberOfPages;
                 let thisPage;
                 if (currentpage) thisPage = parseInt(currentpage) - 1;
@@ -2273,6 +2352,12 @@ exports.renderAllInvoicedOrders = async (req, res) => {
 
                 numberOfPages = Math.ceil(providers?.length / ITEMS_PER_PAGE);
                 let finalPosts = providers.slice(0, ITEMS_PER_PAGE);
+		const uniqueProvidersInData = [];
+		const differentProviders = Array.from(new Set(allInvoicingOrders.map(item=> item.providerId)));
+		for(let providerItem of differentProviders){
+			const matchProvider = await providerModel.findOne({_id: providerItem});
+			if(matchProvider) uniqueProvidersInData.push({name:matchProvider.firstName+" "+matchProvider.lastName, providerId:matchProvider._id})
+		}
                 console.log("rendering...")
                 res.render('invoicedOrders', {
                         orders:providers,
@@ -2280,11 +2365,12 @@ exports.renderAllInvoicedOrders = async (req, res) => {
                         paginationtype: paginationtype || 'default',
                         searchquery: searchquery || '',
                         numberOfPages,
+			providers:uniqueProvidersInData,
                         message: req.flash('message')
                 });
         } catch (error) {
                 log(error);
-                res.status(500).json({ success: true, message: 'server error' })
+                res.status(500).json({ success: true, message: 'server error',error })
         }
 }
 
@@ -2310,6 +2396,22 @@ exports.searchOrdersById = async (req, res) => {
 	}
 }
 
+exports.searchCustomerOrdersByOrderId = async (req, res) => {
+	try{
+		
+		const {orderId} = req.body;
+                let filter;
+                if (/^\d+$/.test(orderId)) filter = "orderid";
+                else if (/^[a-zA-Z]+$/.test(orderId)) filter = "name";
+                else filter = "orderid"
+                res.redirect(`/api/v1/manage/render-independent-orders?filter=${filter}&filterval=${orderId}`);
+
+	} catch(error){
+		log(error);
+                res.status(500).json({ success: false, message: 'server error' });
+	}
+}
+
 exports.renderOrder = async (req, res) => {
 	try {
 		const { orderId } = req.params;
@@ -2318,7 +2420,7 @@ exports.renderOrder = async (req, res) => {
 		if (!order) return res.status(400).json({ success: false, message: 'order not found, please check the order id' });
 		res.render('order', {
 			order,
-		})
+		});
 	} catch (error) {
 		log(error);
 		res.status(500).json({ success: false, message: 'server error' });
@@ -2329,12 +2431,13 @@ exports.renderCreateNewProvider = async (req, res) => {
 	try {
 		res.render('newProvider', {
 			message: req.flash('message'),
-		})
+		});
 	} catch (error) {
 		log(error);
 		res.status(500).json({ success: false, message: 'server error' });
 	}
 }
+
 exports.renderUpdateProvider = async (req, res) => {
 	try{
 		const {providerId} = req.params;
@@ -2345,9 +2448,226 @@ exports.renderUpdateProvider = async (req, res) => {
 			providerData: provider,
 		})
 	} catch (err) {
-		console.log(err)
+		console.log(err);
+		res.status(500).json({ success: false, message: 'server error', error:err });
 	}
 }
+
+exports.deleteProvider = async (req, res) => {
+        try{
+                const {providerid} = req.query;
+                const provider = await providerModel.findOneAndDelete({_id: providerid});
+		res.status(200).json({success: true, msg:'provider deleted'});
+        } catch (err) {
+                console.log(err);
+                res.status(500).json({ success: false, message: 'server error', error:err });
+        }
+}
+
+exports.renderCustomizationPage = async (req, res) => {
+	try{
+		const customData = await customizationModel.findOne({});
+		res.render("customization", {customData});
+	} catch(err){
+		console.log(err);
+                res.status(500).json({ success: false, message: 'server error', error:err });
+	}
+}
+
+exports.renderAddNewCoupon = async (req, res) => {
+        try{
+		const post = await postModel.find({postType:"669a3a1f348f5b66bf71bfe2"});
+                if(!post || post.length === 0) return res.status(400).json({success: false, msg:"Product not found to place order"});
+
+                res.render("newCoupon", { posts: post.map(item => item.postData), message: req.flash("message") });
+        } catch(err){
+                console.log(err);
+                res.status(500).json({ success: false, message: 'server error', error:err });
+        }
+}
+
+exports.addNewCoupon = async (req, res) => {
+        try{
+		const {couponName, couponCode, discount, maxAllowed, productName} = req.body;
+
+                const post = await postModel.findOne({postType:"669a3a1f348f5b66bf71bfe2", postName:productName});
+                if(!post || post.length === 0) return res.status(400).json({success: false, msg:"Product not found to place order"});
+
+
+		const newCoupon = new couponModel({
+			couponName,
+        		couponCode: couponCode.toUpperCase(),
+        		couponDiscount: discount,
+        		maximumAllowedDiscount: maxAllowed,
+			productId: post._id.toString(),
+		});
+
+		await newCoupon.save();
+		req.flash("message", {success: true, message:"Coupon has been added!"});
+		return res.redirect("/api/v1/manage/render-addnewcoupon");
+
+                // res.render("newCoupon", { posts: post.map(item => item.postData) });
+        } catch(err){
+                console.log(err);
+                res.status(500).json({ success: false, message: 'server error', error:err });
+        }
+}
+
+exports.updateCustomizationData = async (req, res) => {
+	try{
+		const { portalWelcomeMessage, paperWelcomeMessage } = req.body;  	
+		console.log(req.files, req.body);
+		let updatedPDFName_portal;
+		let updatedPDFName_paper;
+		let match = await customizationModel.findOne({});
+		if(!match) {
+			const newCustomization = new customizationModel({
+				protalProviderWelcomeMessage: portalWelcomeMessage,
+                                paperProviderWelcomeMessage: paperWelcomeMessage,
+                                portalWelcomePDF: req.files[0].filename,
+				portalWelcomePDFName: req.files[0].originalname,
+                                paperWelcomePDF: req.files[1].filename,
+				paperWelcomePDFName: req.files[1].originalname,
+				notEligiblePDF: req.files[2].filename,
+				notEligiblePDFName: req.files[2].originalname
+			});
+			await newCustomization.save();
+		} else {
+		updatedPDFName_portal = match.portalWelcomePDF;
+		updatedPDFName_paper = match.paperWelcomePDF;
+		updatedPDFName_notEligible = match.notEligiblePDF;
+		displayPDFName_portal = match.portalWelcomePDFName;
+		displayPDFName_paper = match.paperWelcomePDFName;
+		displayPDFName_notEligible = match.notEligiblePDFName;
+
+		if(req.files && req.files[0]) { 
+			if(req.files[0].fieldname === 'portalWelcomePDF') { 
+				updatedPDFName_portal = req.files[0].filename; displayPDFName_portal  = req.files[0].originalname; 
+			} else if(req.files[0].fieldname === 'paperWelcomePDF') { 
+				updatedPDFName_paper = req.files[0].filename; displayPDFName_paper = req.files[0].originalname;
+			} else if(req.files[0].fieldname === 'notEligiblePDF') { 
+				updatedPDFName_notEligible = req.files[0].filename; displayPDFName_notEligible = req.files[0].originalname;
+			}
+		}
+		if(req.files && req.files[1]) { updatedPDFName_paper = req.files[1].filename; displayPDFName_paper = req.files[1].originalname; }
+		if(req.files && req.files[2]) { updatedPDFName_notEligible = req.files[2].filename; displayPDFName_notEligible = req.files[2].originalname; }
+		console.log("UPDATED DATA", req.files)
+
+                await customizationModel.findOneAndUpdate({}, {
+			$set:{
+				protalProviderWelcomeMessage: portalWelcomeMessage,
+				paperProviderWelcomeMessage: paperWelcomeMessage,
+				portalWelcomePDF: updatedPDFName_portal,
+				paperWelcomePDF: updatedPDFName_paper,
+				portalWelcomePDFName: displayPDFName_portal,
+				paperWelcomePDFName: displayPDFName_paper,
+				notEligiblePDF: updatedPDFName_notEligible,
+				notEligiblePDFName: displayPDFName_notEligible
+			}
+		});
+		}
+		const customData = await customizationModel.findOne({});
+		console.log("UPDATED DATA:", customData);
+		req.flash("message", "Data Updated Successfully");
+                res.render("customization", {customData});
+        } catch(err){
+                console.log(err);
+                res.status(500).json({ success: false, message: 'server error', error:err });
+        }
+}
+
+exports.renderAddManualOrder = async (req, res) => {
+	try{
+		let providers = await providerModel.find({}).lean();
+		providers = providers.map(item => ({firstName:item.firstName, lastName:item.lastName, providerId:item._id }))
+		res.render('addManualOrder', {
+			message: req.flash('message'),
+			providers,
+		})
+	} catch (err) {
+		console.log(err);
+		res.status(500).json({ success: false, message: 'server error', error:err });
+	}
+}
+
+exports.addManualOrder = async (req, res) => {
+	try {
+		console.log("Registration data", req.file, req.files);
+                const count = await testOrdersModel.countDocuments();
+		const nextId = await getNextOrderId(); 
+
+                const { providerId } = req.body;
+                let checkProvider = false;
+                let checkInvoice = true;
+                if (providerId && providerId !== "undefined") {
+                        const providerMatch = await providerModel.findOne({ _id: providerId });
+                        if (providerMatch) checkProvider = true;
+                }
+
+                const post = await postModel.findOne({postType:"669a3a1f348f5b66bf71bfe2", postName:"ColoHealth"});
+                if(!post) return res.status(400).json({success: false, msg:"Product not found to place order"});
+
+
+                const newRegistration = new testOrdersModel({
+                        providerId: (req.body.providerId && checkProvider) ? req.body.providerId : 'NULL',
+                        orderId: nextId,
+                        firstName: req.body.firstName,
+                        lastName: req.body.lastName,
+                        streetAddress: req.body.streetAddress,
+                        city: req.body.city,
+                        state: req.body.state,
+                        zip: req.body.zip,
+                        phone: req.body.phone,
+                        email: req.body.email,
+                        dob: req.body.dob,
+                        gender: req.body.gender,
+                        race: req.body.race,
+                        ethnicity: req.body.ethnicity,
+                        registrationConsent: req.body.confirm,
+                        scheduledAt: req.body.scheduledAt,
+                        orderConfirmation: (checkInvoice && checkProvider) ? true : false,
+                        isInvoiced: checkInvoice,
+                        productId:post._id,
+                        productName: post.postData.productName,
+                        paymentConfirmed: (checkInvoice && checkProvider) ? true : false,
+                        paymentInformation: {
+                                status: "PENDING",
+                                transactionId: (checkInvoice && checkProvider) ? "INVOICED" : "PENDING",
+                        }
+                });
+                await newRegistration.save();
+		
+
+                // rename the pdf as it came from frontend
+                 if (req.body.providerId) {
+                        const oldPath = path.join(__dirname, "../recforms", req.files[0].filename);
+                        const newPath = path.join(__dirname, "../recforms", `PROV_${req.body.providerId}_${req.body.firstName}_${req.body.lastName}_${newRegistration._id.toString()}_${req.files[0].originalname}`);
+                        fs.renameSync(oldPath, newPath);
+                        console.log("Req form pdf saved and renamed", newPath);
+                }
+
+                if(checkInvoice){
+                        let orderData = await testOrdersModel.findOne({_id: newRegistration._id}).lean();
+                        orderData.status = "Processing";
+                        orderData.orderDate = new Date().toLocaleString();
+                        orderData.countryCode = "US";
+                        orderData.productItemNumber = "1";
+                        orderData.productItemName = post.postData.productName;
+                        orderData.productPrice = post.postData.productPrice;
+                        orderData.paymentMethod = orderData.isInvoiced ? "INVOICE":"ONLINE";
+			const filePath = path.join(__dirname, '../excel_data/orders.xls');
+                        fillOrderDetails(orderData, filePath);
+                        return res.redirect("/api/v1/manage/render-invoiced-orders");
+                }
+
+                // generate a payment token
+
+	} catch (err) {
+		console.log(err);
+                res.status(500).json({ success: false, message: 'server error', error:err });
+	}
+}
+
 
 exports.downloadProviderOrders = async (req, res) => {
 	try{
@@ -2387,22 +2707,273 @@ exports.downloadProviderOrders = async (req, res) => {
 			await fsPromise.unlink(tempFilePath);
                 });
 
-		// await fsPromise.unlink(tempFilePath);
 		console.log("provider order sheet downloaded and removed")
 
         } catch (err) {
-		console.log(err)
+		console.log(err);
+                res.status(500).json({success: false, err})
+        }
+}
+
+exports.downloadCustomerOrders_DateRanged = async (req, res) => {
+	try{
+		
+		const {startDate, endDate} = req.body;
+		const stDt = new Date(startDate);
+		const endDt = new Date(endDate);
+
+		endDt.setHours(23, 59, 59, 999);
+
+                const ordersMatch = await testOrdersModel.find({providerId: 'NULL', createdAt: {
+        		$gte: stDt,
+        		$lte: endDt
+      		}}).lean();
+                if(!ordersMatch) return res.status(400).json({success: false, msg:"orders not found"});
+
+		
+                // make a copy of the blank excel sheet :
+                const blankFilePath = path.join(__dirname, "../export_data/blank_files/blankOrders.xls");
+                const tempFileName = `Cusomer_Orders_${startDate}-${endDate}_Dates.xls`;
+                const tempFilePath = path.join(__dirname, `../export_data/${tempFileName}`);
+
+                await fsPromise.copyFile(blankFilePath, tempFilePath);
+
+                for(let orderData of ordersMatch) {
+                        const post = await postModel.findOne({_id: orderData.productId});
+
+                        orderData.status = "Processing";
+                        orderData.orderDate = new Date().toLocaleString();
+                        orderData.countryCode = "US";
+                        orderData.productItemNumber = "1";
+                        orderData.productItemName = post ? post.postData.productName: "";
+                        orderData.productPrice = post ? post.postData.productPrice : "";
+                        orderData.paymentMethod = orderData.isInvoiced ? "INVOICE":"ONLINE";
+
+                        fillOrderDetails(orderData, tempFilePath);
+
+                }
+
+                res.download(tempFilePath, tempFileName, async (err) => {
+                        if (err) {
+                                console.error('Error downloading the file:', err);
+                                res.status(500).send('Error downloading the file.');
+                        }
+                        await fsPromise.unlink(tempFilePath);
+                });
+
+                console.log("customer order sheet downloaded and removed");
+
+	} catch(err){
+		console.log(err);
+                res.status(500).json({success: false, err})
+	}
+}
+
+exports.downloadProviderOrders_DateRanged = async (req, res) => {
+	try {
+		const {startDate, endDate, providerId} = req.body;
+                const stDt = new Date(startDate);
+                const endDt = new Date(endDate);
+
+                endDt.setHours(23, 59, 59, 999);
+
+		const match = await providerModel.findOne({_id: providerId}, {password: 0}).lean();
+		if(!match) return res.status(400).json({success: false, msg:"Provider not found"});
+
+                const ordersMatch = await testOrdersModel.find({providerId, createdAt: {
+                        $gte: stDt,
+                        $lte: endDt
+                }}).lean();
+                if(!ordersMatch) return res.status(400).json({success: false, msg:"orders not found"});
+
+
+                // make a copy of the blank excel sheet :
+                const blankFilePath = path.join(__dirname, "../export_data/blank_files/blankOrders.xls");
+                const tempFileName = `${match.firstName}_${match.lastName}_Orders_${startDate}-${endDate}_Dates.xls`;
+                const tempFilePath = path.join(__dirname, `../export_data/${tempFileName}`);
+
+                await fsPromise.copyFile(blankFilePath, tempFilePath);
+
+                for(let orderData of ordersMatch) {
+                        const post = await postModel.findOne({_id: orderData.productId});
+
+                        orderData.status = "Processing";
+                        orderData.orderDate = new Date().toLocaleString();
+                        orderData.countryCode = "US";
+                        orderData.productItemNumber = "1";
+                        orderData.productItemName = post ? post.postData.productName: "";
+                        orderData.productPrice = post ? post.postData.productPrice : "";
+                        orderData.paymentMethod = orderData.isInvoiced ? "INVOICE":"ONLINE";
+
+                        fillOrderDetails(orderData, tempFilePath);
+
+                }
+
+		fillOrderDetails({}, tempFilePath, true, {providerId: match._id, firstName: match.firstName, lastName: match.lastName})
+                res.download(tempFilePath, tempFileName, async (err) => {
+                        if (err) {
+                                console.error('Error downloading the file:', err);
+                                res.status(500).send('Error downloading the file.');
+                        }
+                        await fsPromise.unlink(tempFilePath);
+                });
+
+                // await fsPromise.unlink(tempFilePath);
+                console.log("customer order sheet downloaded and removed")
+	} catch(err){
+		console.log(err);
+                res.status(500).json({success: false, err})
+	}
+}
+
+exports.downloadCustomerOrders_All = async (req, res) => {
+	try {
+
+                const ordersMatch = await testOrdersModel.find({ providerId: 'NULL' }).lean();
+                if(!ordersMatch) return res.status(400).json({success: false, msg:"orders not found"});
+
+                const blankFilePath = path.join(__dirname, "../export_data/blank_files/blankOrders.xls");
+                const tempFileName = `Cusomer_Orders_All_Dates.xls`;
+                const tempFilePath = path.join(__dirname, `../export_data/${tempFileName}`);
+
+                await fsPromise.copyFile(blankFilePath, tempFilePath);
+
+                for(let orderData of ordersMatch) {
+                        const post = await postModel.findOne({_id: orderData.productId});
+
+                        orderData.status = "Processing";
+                        orderData.orderDate = new Date().toLocaleString();
+                        orderData.countryCode = "US";
+                        orderData.productItemNumber = "1";
+                        orderData.productItemName = post ? post.postData.productName: "";
+                        orderData.productPrice = post ? post.postData.productPrice : "";
+                        orderData.paymentMethod = orderData.isInvoiced ? "INVOICE":"ONLINE";
+
+                        fillOrderDetails(orderData, tempFilePath);
+
+                }
+
+                res.download(tempFilePath, tempFileName, async (err) => {
+                        if (err) {
+                                console.error('Error downloading the file:', err);
+                                res.status(500).send('Error downloading the file.');
+                        }
+                        await fsPromise.unlink(tempFilePath);
+                });
+
+                // await fsPromise.unlink(tempFilePath);
+                console.log("customer order sheet downloaded and removed");
+
+	} catch(err){
+		console.log(err);
+		res.status(500).json({success: false, err})
+	}
+}
+
+exports.downloadProviderOrders_All = async (req, res) => {
+        try {
+		const {providerId} = req.body;
+		const match = await providerModel.findOne({_id: providerId}, {password: 0}).lean();
+                if(!match) return res.status(400).json({success: false, msg:"Provider not found"});
+
+                const ordersMatch = await testOrdersModel.find({ providerId: providerId }).lean();
+                if(!ordersMatch) return res.status(400).json({success: false, msg:"orders not found"});
+
+                // make a copy of the blank excel sheet :
+                const blankFilePath = path.join(__dirname, "../export_data/blank_files/blankOrders.xls");
+                const tempFileName = `Provider_Orders_All_Dates.xls`;
+                const tempFilePath = path.join(__dirname, `../export_data/${tempFileName}`);
+
+                await fsPromise.copyFile(blankFilePath, tempFilePath);
+
+                for(let orderData of ordersMatch) {
+                        const post = await postModel.findOne({_id: orderData.productId});
+
+                        orderData.status = "Processing";
+                        orderData.orderDate = new Date().toLocaleString();
+                        orderData.countryCode = "US";
+                        orderData.productItemNumber = "1";
+                        orderData.productItemName = post ? post.postData.productName: "";
+                        orderData.productPrice = post ? post.postData.productPrice : "";
+                        orderData.paymentMethod = orderData.isInvoiced ? "INVOICE":"ONLINE";
+
+                        fillOrderDetails(orderData, tempFilePath);
+
+                }
+		fillOrderDetails({}, tempFilePath, true, {providerId: match._id, firstName: match.firstName, lastName: match.lastName});
+                res.download(tempFilePath, tempFileName, async (err) => {
+                        if (err) {
+                                console.error('Error downloading the file:', err);
+                                res.status(500).send('Error downloading the file.');
+                        }
+                        await fsPromise.unlink(tempFilePath);
+                });
+
+                // await fsPromise.unlink(tempFilePath);
+                console.log("customer order sheet downloaded and removed");
+
+        } catch(err){
+                console.log(err);
+                res.status(500).json({success: false, err})
+        }
+}
+
+exports.updateOrderStatus = async (req, res) => {
+	try{
+		const {testStatus, orderId} = req.body;
+		console.log(req.body);
+		const orderMatch = await testOrdersModel.findOne({_id: orderId});
+		if(!orderMatch) return res.status(400).json({success: false, msg:"Cannot find order"});
+		await testOrdersModel.findOneAndUpdate({_id: orderId}, {
+			$set:{ testStatus: testStatus}
+		});
+		return res.redirect(`/api/v1/manage/show-order/${orderId}`);
+	} catch(err){
+		console.log(err);
+		res.status(500).json({success: false, err})
+	}
+}
+
+exports.searchOrderByOrderId = async (req, res) => {
+	try{
+		const {orderId} = req.body;
+		let filter;
+		if (/^\d+$/.test(orderId)) filter = "orderid";
+		else if (/^[a-zA-Z]+$/.test(orderId)) filter = "name";
+		else filter = "orderid"
+		res.redirect(`/api/v1/manage/render-invoiced-orders?filter=${filter}&filterval=${orderId}`);
+		
+	} catch (err) {
+		console.log(err);
+                res.status(500).json({success: false, err})
+	}
+}
+
+exports.updateOrderStatusNotes = async (req, res) => {
+        try{
+                const {testingStatusNotes, orderId} = req.body;
+                console.log(req.body);
+                const orderMatch = await testOrdersModel.findOne({_id: orderId});
+                if(!orderMatch) return res.status(400).json({success: false, msg:"Cannot find order"});
+                await testOrdersModel.findOneAndUpdate({_id: orderId}, {
+                        $set:{ testingStatusNotes: testingStatusNotes}
+                });
+                return res.redirect(`/api/v1/manage/show-order/${orderId}`);
+        } catch(err){
+                console.log(err);
+                res.status(500).json({success: false, err})
         }
 }
 
 
 exports.updateProvider = async (req, res) => {
 	try{
-		const {firstName, providerId, mi, lastName, dob, email, phone, address1, address2, city, state, zip, npi, lisProviderId, resultContactEmail} = req.body;
+		const {firstName, providerType, providerId, mi, lastName, dob, email, phone, address1, address2, city, state, zip, npi, lisProviderId, resultContactEmail} = req.body;
 		const match = await providerModel.findOne({_id: providerId});
 		if(!match) return res.satus(400).json({success: false, msg:"provider not found"});
 
                 const updatedProvider = await providerModel.findOneAndUpdate({ _id: providerId },{ $set: {
+			providerType,
 			firstName,
                         mi,
                         lastName,
@@ -2507,12 +3078,22 @@ exports.updatePricingData = async (req, res) => {
 
 exports.createNewProvider = async (req, res) => {
 	try {
-		const {firstName, mi, lastName, dob, email, phone, address1, address2, city, state, zip, npi, lisProviderId, resultContactEmail} = req.body;
-		const hash = await bcrypt.hash("test101", 10);
+		const {firstName, mi, providerType, lastName, dob, email, phone, address1, address2, city, state, zip, npi, lisProviderId, resultContactEmail} = req.body;
+
+		// generate a secure password:
+		const securePassword = pwdGen.generate({
+			length: 10,
+			numbers: true
+		});
+		const hash = await bcrypt.hash(securePassword, 10);
 		const match = await providerModel.findOne({email});
-		if(match) return res.status(400).json({success: false, msg:"A provider with this email already exists"});
+		if(match) {
+			req.flash("message", "A Provider With The Given Email Already Exists!");
+			return res.redirect("/api/v1/manage/render-create-new-provider")
+		} 
 
 		const newProvider = new providerModel({
+			providerType,
 			firstName, 
 			mi,
 			lastName, 
@@ -2535,6 +3116,278 @@ exports.createNewProvider = async (req, res) => {
 		});
 
 		await newProvider.save();
+		const customizationData = await customizationModel.findOne({});
+		const pdfCreated = generatePDF(newProvider);
+		if(pdfCreated === true) console.log("PDF Created for new provider");
+		const transporter = nodemailer.createTransport({
+	host: 'smtp.gmail.com',
+	port: 587,
+	secure: false, // true for 465, false for other ports
+	auth: {
+		user: `${process.env.SMTP_MAIL}`, // generated user
+		pass: `${process.env.SMTP_MAIL_PSWD}`  // generated password
+	}
+});
+const ip = "http://174.138.76.145/" //change this when you change the ip address
+
+const mailOptions = {
+	from: 'hrashikeshapandey@gmail.com',
+	to: email,
+	subject: 'Welcome to New Day Diagnostics!',
+	attachments: [
+        	{
+           		filename: `Welcome_${newProvider.firstName}_${newProvider.lastName}.pdf`, // The name of the attachment file
+            		path: path.join(__dirname, `../recforms/${customizationData.portalWelcomePDF}`) // The path to the file
+        	},
+		{
+                        filename: `Blank_Req_${newProvider.firstName}_${newProvider.lastName}.pdf`, // The name of the attachment file
+                        path: path.join(__dirname, `../provider_blank_requisitions/${newProvider._id}_${newProvider.firstName}_${newProvider.lastName}.pdf`) // The path to the file
+                }
+    	],
+	html: `<table
+	style="border-collapse:collapse;font-family:Arial,sans-serif;font-weight:normal;margin:0px auto;max-width:600px;width:100%"
+	border="0" width="100%" cellspacing="0" cellpadding="0" align="center">
+	<tbody>
+		<tr>
+			<td style="border-collapse:collapse">
+				<span>
+					<table
+						style="border-collapse:collapse;font-family:Roboto,arial;font-weight:normal;margin:0px auto;max-width:600px;width:100%"
+						width="100%" cellspacing="0" cellpadding="0" align="center">
+						<tbody>
+							<tr>
+								<td style="border-collapse:collapse;font-size:0px;padding:32px 5px 28px;text-align:center"
+									align="center">
+									<div style="display:inline-block;float:left;max-width:290px;vertical-align:top;width:100%">
+										<table style="border-collapse:collapse;font-family:Roboto,arial;font-weight:normal" width="100%"
+											cellspacing="0" cellpadding="0">
+											<tbody>
+												<tr>
+													<td style="border-collapse:collapse;font-size:15px;padding:2px 0px 0px">
+														<table style="border-collapse:collapse;font-family:roboto,arial;font-weight:500;width:100%"
+															border="0" width="100%" cellspacing="0" cellpadding="0">
+															<tbody>
+																<tr>
+																	<td style="border-collapse:collapse;text-align:left"><img
+																			style="height:auto;outline:none;text-decoration:none"
+																			src="${ip}/static/mailLoginIcon.svg" alt="logo " width="50" height="auto"
+																			class="CToWUd" data-bit="iit">
+																		<figcaption>New Day Diagnostics</figcaption>
+																	</td>
+																</tr>
+															</tbody>
+														</table>
+													</td>
+												</tr>
+											</tbody>
+										</table>
+									</div>
+									<div style="display:inline-block;float:right;max-width:290px;vertical-align:top;width:100%">
+										<table style="border-collapse:collapse;font-family:Roboto,arial;font-weight:normal" width="100%"
+											cellspacing="0" cellpadding="0">
+											<tbody>
+												<tr>
+													<td style="border-collapse:collapse;font-size:15px;padding:10px 0px 0px">
+														<table style="border-collapse:collapse;font-family:roboto,arial;font-weight:500;width:100%"
+															border="0" width="100%" cellspacing="0" cellpadding="0">
+															<tbody>
+																<tr>
+																	<td style="border-collapse:collapse;padding-right:0px;padding-top:0px">
+																		<table
+																			style="border-collapse:collapse;font-family:roboto,arial;font-weight:500;width:100%"
+																			border="0" width="100%" cellspacing="0" cellpadding="0">
+																			<tbody>
+																				<tr>
+																					<td
+																						style="border-collapse:collapse;color:rgb(144,164,174);font-family:Roboto,arial;font-size:15px;font-weight:bold;line-height:16px;text-align:right"
+																						align="right" width="100%"><a
+																							style="color:rgb(0,0,0);font-family:Roboto,arial;font-size:18px;font-weight:700;line-height:16px;text-decoration:none"
+																							href="#" rel="noopener" target="_blank"
+																							data-saferedirecturl="https://www.google.com/url?q=https://google.com&amp;source=gmail&amp;ust=1700029623404000&amp;usg=AOvVaw3GmZFuNorLZ1Vr1ikcRs9u">ColoHealth</a>
+																					</td>
+																				</tr>
+																			</tbody>
+																		</table>
+																	</td>
+																</tr>
+															</tbody>
+														</table>
+													</td>
+												</tr>
+											</tbody>
+										</table>
+									</div>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</span>
+				<table
+					style="border-collapse:collapse;border-left:1px solid rgb(221,221,221);border-right:1px solid rgb(221,221,221);border-top:1px solid rgb(221,221,221);font-family:Arial,sans-serif;font-weight:normal;max-width:600px;width:100%;background-color:rgb(255,255,255)"
+					border="0" width="100%" cellspacing="0" cellpadding="0" align="center" bgcolor="#ffffff">
+					<tbody>
+						<tr>
+							<td style="border-collapse:collapse">
+								<table style="background:linear-gradient(45deg, #0C1F8F 0%, #0C1F8F 35%, #ED683E 35%, #ED683E 40%, #38B7FE 40%);max-width:600px;border-collapse:collapse;width:100%" border="0"
+									width="600" cellspacing="0" cellpadding="0">
+									<tbody>
+										<tr>
+											<td style="max-width:600px;border-collapse:collapse;font-size:16px;padding-right:40px"
+												align="left" width="600">
+												<span>
+													<table style="max-width:600px;border-collapse:collapse;width:100%"
+														border="0" width="600" cellspacing="0" cellpadding="0">
+														<tbody>
+															<tr>
+																<td
+																	style="max-width:69px;padding-right:12px;padding-left:40px;border-collapse:collapse;padding-top:37px"
+																	align="left" width="69"><img style="outline:none;text-decoration:none"
+																		src="https://ci6.googleusercontent.com/proxy/c0ae1pHN2D5fZXqAEQywogYhm0u47xu3Ug_yWDvpIIefHp_hSpPLG9enPt24Wgyqx3GxsHnWStIKNZZIpUheM2h7vtHQx5guBqvJm7cEHDUO4urWvvDQnHzPiMnulfbB1Q=s0-d-e1-ft#http://services.google.com/fh/files/emails/hero_icon_project_reinstatement.png"
+																		alt="Notification" width="17" height="18" class="CToWUd" data-bit="iit"></td>
+																<td
+																	style="width:100%;max-width:531px;font-family:Roboto,arial;font-weight:500;font-size:14px;color:rgb(255,255,255);letter-spacing:0.6px;border-collapse:collapse;padding-top:33px"
+																	align="left" width="531">Provider Welcome Email
+																</td>
+															</tr>
+														</tbody>
+													</table>
+												</span>
+												<table
+													style="max-width:600px;border-collapse:collapse;width:100%;font-family:Roboto,arial;font-weight:500;color:rgb(255,255,255);line-height:32px;font-size:24px"
+													border="0" width="600" cellspacing="0" cellpadding="0">
+													<tbody>
+														<tr>
+															<td
+																style="width:100%;max-width:531px;border-collapse:collapse;font-family:Roboto,arial;font-weight:500;color:rgb(255,255,255);line-height:32px;font-size:24px;padding:13px 12px 24px 40px"
+																align="left" width="531">&nbsp; Welcome to New Day Diagnostics!</td>
+														</tr>
+													</tbody>
+												</table>
+											</td>
+										</tr>
+									</tbody>
+								</table>
+								<div style="background-color: #DEA52B;height: 5px;">&nbsp;</div>
+								<table
+									style="max-width:600px;border-collapse:collapse;font-family:Arial,sans-serif;font-weight:normal;width:100%"
+									border="0" width="600" cellspacing="0" cellpadding="0">
+									<tbody>
+										<tr>
+											<td style="width:100%;max-width:520px;padding-top:25px;padding-left:40px;padding-right:40px"
+												width="520">
+												<table
+													style="max-width:520px;border-collapse:collapse;font-family:Arial,sans-serif;font-weight:normal;width:100%"
+													border="0" width="520" cellspacing="0" cellpadding="0">
+													<tbody>
+														<tr>
+															<td
+																style="padding-bottom:16px;font-family:Roboto,arial;font-weight:normal;font-size:14px;color:rgb(69,90,100);line-height:24px">
+																Hey there!</td>
+														</tr>
+														<tr>
+															<td style="padding-bottom:16px;font-family:Roboto,arial;font-size:14px;line-height:24px">
+																<p style="font-weight: bold;">We are thrilled to have you on board.</p>
+																${customizationData ?  newProvider.providerType === "portal" ? customizationData.protalProviderWelcomeMessage : customizationData.paperProviderWelcomeMessage : '<p>Welcome to New Day Diagnostics! We are delighted to have you join our community dedicated to proactive and accessible healthcare.</p>' }
+																
+
+																${newProvider.providerType === "portal" && '<p>Please find the credentials to login to the portal below:</p>'} ${newProvider.providerType === "portal" && '<p> Login Url: <a href="http://174.138.76.145/provider-login">http://174.138.76.145/provider-login</a></p>'}  ${newProvider.providerType === "portal" && '<p>Email: <strong>'+newProvider.email+'</strong></p>'} ${newProvider.providerType === "portal" && '<p>Password: <strong style="color:#064e3b">'+ securePassword + '</strong></p>'}
+																<p style="font-weight: bold;">Attached to this email, you will find:</p>
+
+																<p>
+																	A Welcome PDF: This document provides a comprehensive overview of our services and how to get started.
+																	A Blank Requisition Form: You can use this form to order additional tests or update your information.
+																</p>
+
+																<p>
+																	<span style="font-weight: bold;"> Need Help?</span><br>
+
+																	If you encounter any issues or need further assistance, don't hesitate to reach out to
+																	our support team at .<br>
+
+																	Once again, thanks for being a part of our community. We appreciate your trust
+																	and are here to help you every step of the way.<br>
+
+																</p>
+																<p style="color:rgb(69,90,100);font-weight:normal"><span style="color:rgb(52,152,219)">
+
+																	</span></p>
+															</td>
+														</tr>
+													</tbody>
+												</table>
+											</td>
+										</tr>
+									</tbody>
+								</table>
+								<span>
+									<table style="border-collapse:collapse;font-family:Arial,sans-serif;font-weight:normal" border="0"
+										width="100%" cellspacing="0" cellpadding="0">
+										<tbody>
+											<tr>
+												<td
+													style="border-bottom:1px solid rgb(221,221,221);border-collapse:collapse;padding-left:40px;width:100%;padding-right:22px"
+													width="100%">
+													<table style="border-collapse:collapse;font-family:Arial,sans-serif;font-weight:normal"
+														border="0" cellspacing="0" cellpadding="0">
+														<tbody>
+															<tr>
+																<td
+																	style="border-collapse:collapse;color:rgb(69,90,100);font-family:Roboto,arial;font-size:14px;font-weight:normal;line-height:24px;padding-bottom:7px;padding-top:14px">
+																	Warm Regards,</td>
+															</tr>
+															<tr>
+																<td
+																	style="border-collapse:collapse;color:rgb(69,90,100);font-family:Roboto,arial;font-size:16px;font-weight:700;line-height:24px;padding-bottom:20px">
+																	New Day Diagnostics Team</td>
+															</tr>
+														</tbody>
+													</table>
+												</td>
+											</tr>
+										</tbody>
+									</table>
+								</span>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</td>
+		</tr>
+		<tr>
+			<td style="border-collapse:collapse">
+				<table
+					style="border-collapse:collapse;font-family:Arial,sans-serif;font-weight:normal;margin:0px auto;max-width:600px;width:100%"
+					border="0" width="100%" cellspacing="0" cellpadding="0" align="center">
+					<tbody>
+						<tr>
+							<td
+								style="border-collapse:collapse;color:rgb(117,117,117);font-family:Roboto,arial;font-size:12px;line-height:16px;padding:36px 40px 0px;text-align:center"
+								align="center"><img style="outline:none;text-decoration:none" src="${ip}/static/mailLoginIcon.svg"
+									alt="your branding here" width="50" class="CToWUd" data-bit="iit">
+								<span style="display: block;color: #000;font-weight: 600;">© ${new Date().getFullYear()}&nbsp; New Day Diagnostics</span>
+							</td>
+						</tr>
+						<tr>
+							<td
+								style="border-collapse:collapse;color:rgb(117,117,117);font-family:Roboto,arial;font-size:12px;line-height:16px;padding:10px 40px 20px;text-align:center"
+								align="center">You have received this mandatory service announcement to update you about important
+								changes/actions to your New Day Diagnostics provider account. <br>All Rights Reserved.</td>
+						</tr>
+					</tbody>
+				</table>
+			</td>
+		</tr>
+	</tbody>
+</table>`
+}
+
+transporter.sendMail(mailOptions, (error, info) => {
+	if (error) {
+		console.error(error);
+	} else {
+		log('Email sent: ' + info.response);
+	}
+});
 		res.redirect("/api/v1/manage/render-all-providers");
 
 	} catch (error) {
@@ -2733,10 +3586,25 @@ exports.editCoupon = async (req, res) => {
 	try {
 		const couponId = req.params.couponId;
 		const couponData = await couponModel.findOne({ _id: couponId });
-		res.render("editCoupon", couponData)
+		res.render("editCoupon", {couponData, message: req.flash("message")})
 	} catch (error) {
 		console.error(error);
 		res.status(500).json({ success: false, message: "Internal server error" });
+	}
+}
+
+exports.updateCoupon = async (req, res) => {
+	try {
+		const {couponId, couponName, couponCode, couponDescription, couponDiscount, maximumAllowedDiscount} = req.body;
+		const match = await couponModel.findOneAndUpdate({_id: couponId}, {
+			couponName, couponCode, couponDescription, couponDiscount: parseFloat(couponDiscount), maximumAllowedDiscount: parseFloat(maximumAllowedDiscount)
+		});
+		req.flash("message", {success: true, message:"Coupon has been updated!"})
+		return res.redirect(`/api/v1/manage/edit-coupon/${match._id}`)
+
+	} catch(err){
+		console.error(error);
+                res.status(500).json({ success: false, message: "Internal server error" });
 	}
 }
 

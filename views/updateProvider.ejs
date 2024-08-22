@@ -7,6 +7,12 @@
 		</h1>
 			<input type="hidden" name="providerId" value="<%= providerData._id %>" style="">
 
+			<label class="mt-3" for="" style="text-transform: capitalize;margin-bottom: 5px;" >Provider Type:</label>
+                        <select class="form-control" style="border: 1px solid rgba(0,0,0,0.2);" id="providerType" name="providerType" >
+                                <option <%= providerData.providerType === "portal" && "selected"  %>  value="portal">Portal</option>
+                                <option <%= providerData.providerType === "paper" && "selected"  %>  value="paper">Paper</option>
+                        </select>
+
 			<label class="mt-3" for="" style="text-transform: capitalize;margin-bottom: 5px;" >First Name:</label>
 			<input type="text" class="form-control" value="<%= providerData.firstName %>"  style="border: 1px solid rgba(0,0,0,0.2);" id="firstName" name="firstName" >
 
@@ -24,7 +30,7 @@
 			<input type="date" class="form-control" style="border: 1px solid rgba(0,0,0,0.2);padding: 16px;" id="dob" name="dob" >
 
 			<label class="mt-2" for="" style="text-transform: capitalize;margin-bottom: 5px;" >Phone:</label>
-			<input type="number" class="form-control" value="<%= providerData.phone %>"  style="border: 1px solid rgba(0,0,0,0.2);" id="phone" name="phone" >
+			<input type="text" pattern="[\d\s\+\-\(\)]*" oninput="this.value = this.value.replace(/[^0-9\s\+\-\(\)]/g, '');" class="form-control" value="<%= providerData.phone %>"  style="border: 1px solid rgba(0,0,0,0.2);" id="phone" name="phone" >
 
 			<label class="mt-3" for="" style="text-transform: capitalize;margin-bottom: 5px;" >Address 1:</label>
 			<input type="text" class="form-control" value="<%= providerData.address1 %>"  style="border: 1px solid rgba(0,0,0,0.2);" id="address1" name="address1" >
@@ -50,7 +56,7 @@
 			<label class="mt-3" for="" style="text-transform: capitalize;margin-bottom: 5px;" >Result Contact Email:</label>
 			<input type="text" class="form-control" value="<%= providerData.resultContactEmail %>"  style="border: 1px solid rgba(0,0,0,0.2);" id="resultContactEmail" name="resultContactEmail" >
 
-			<button class="button-main button-main-md" type="submit" style="border-radius: 2px;margin-top: 10px;">Add Review</button>
+			<button class="button-main button-main-md" type="submit" style="border-radius: 2px;margin-top: 10px;">Update Provider</button>
 			
 	</form>
 </div>

@@ -21,6 +21,12 @@
 			</thead>
 			<tbody>
 				<tr>
+                                        <td>Provider Type</td>
+                                        <td style="text-transform:uppercase;font-weight:600;color:#2271b1">
+                                                <%= order.providerType %>
+                                        </td>
+                                </tr>
+				<tr>
 					<td>Provider Id</td>
 					<td>
 						<%= order._id %>
@@ -114,14 +120,13 @@
 
 				<tr>
 					<td>Joined At</td>
-					<td style=" text-transform: uppercase;color: orangered;font-weight: 600;">
+					<td style=" text-transform: uppercase;font-weight: 600;">
 							<%= new Date(order.joined).toLocaleDateString() %>
 					</td>
 				</tr>
 				<tr>
 					<td>Status</td>
-					<td style="font-weight: 600;"
-						class="<%= order.status === 'Cash__Pending' ? 'order-status-pending':'order-status-complete' %>">
+					<td style="font-weight: 600;color:#2271b1">
 						<%= order.status %>
 					</td>
 				</tr>
@@ -150,27 +155,9 @@
 				<tr>
 					<td>Payment Method</td>
 					<td>
-						
+					INVOICED	
 					</td>
 				</tr>
-					<tr>
-						<td> Order Id</td>
-						<td>
-							<%= "Pending" %>
-						</td>
-					</tr>
-					<tr>
-						<td>Order Receipt</td>
-						<td>
-							<%= "Pending" %>
-						</td>
-					</tr>
-					<tr>
-						<td>Razorpay Payment Id</td>
-						<td>
-							<%= "Pending" %>
-						</td>
-					</tr>
 			</tbody>
 			<tbody>
 

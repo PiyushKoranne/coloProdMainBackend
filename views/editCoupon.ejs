@@ -1,31 +1,28 @@
 <div style="width: 100%; height: 100%;background-color: #f0f0f1;display: flex;align-items:flex-start;">
 
 
-    <form action="/api/v1/manage/update-coupon" enctype="multipart/form-data" method="POST" style="width: 36%;padding: 15px;display: flex;flex-direction: column;height: 93vh;border-right: 1px dashed rgba(0,0,0,0.25);">
+    <form action="/api/v1/manage/update-coupon" method="POST" style="width: 36%;padding: 15px;display: flex;flex-direction: column;height: 93vh;border-right: 1px dashed rgba(0,0,0,0.25);">
         <h5 style="font-weight: 600; font-size: 13px; text-transform: uppercase;margin-bottom: 5px;padding-bottom: 5px;">
         Add new Coupon</h5>
+	<input type="hidden" name="couponId" value="<%= couponData._id  %>" >
         <label class="mt-2" for="" style="text-transform: capitalize;margin-bottom: 5px;" >Coupon Code:</label>
-        <input type="text" class="form-control" style="border: 1px solid rgba(0,0,0,0.2);" id="couponCode" name="couponCode" value="<%=couponCode%>" >
+        <input type="text" class="form-control" style="border: 1px solid rgba(0,0,0,0.2);" id="couponCode" name="couponCode" value="<%= couponData.couponCode %>" >
         <span style="color: rgba(0,0,0,0.7);font-size: 13px;font-weight: 500;">The name is how it appears on the site.</span>
         
-        <label class="mt-3" for="" style="text-transform: capitalize;margin-bottom: 5px;" >Coupon Id:</label>
-        <input type="text" class="form-control" style="border: 1px solid rgba(0,0,0,0.2);" name="couponId" id="couponId" value="<%=couponId%>" readonly>
+        <label class="mt-3" for="" style="text-transform: capitalize;margin-bottom: 5px;" >Coupon Name:</label>
+        <input type="text" class="form-control" style="border: 1px solid rgba(0,0,0,0.2);" name="couponName" id="couponName" value="<%= couponData.couponName  %>">
         
-        <label class="mt-3" for="" style="text-transform: capitalize;margin-bottom: 5px;" >Coupon Discount:</label>
-        <input type="number" class="form-control" style="border: 1px solid rgba(0,0,0,0.2);" id="couponDiscount" name="couponDiscount" value="<%=couponDiscount%>">
+        <label class="mt-3" for="" style="text-transform: capitalize;margin-bottom: 5px;" >Coupon Discount (%):</label>
+        <input type="number" class="form-control" style="border: 1px solid rgba(0,0,0,0.2);" id="couponDiscount" min="1" max="99" name="couponDiscount" value="<%= couponData.couponDiscount %>">
 
-        <label class="mt-3" for="" style="text-transform: capitalize;margin-bottom: 5px;" >Coupon Image:</label>
-    <div class="file-upload" style="display: flex;flex-direction: column;align-items: center;">
-        <div class="drop-zone">
-        </div>
-        <input type="file" name="couponImage" class="file-input" value="<%=couponImage%>" onchange="previewImage(event)">
-    </div> 
-       
+	<label class="mt-3" for="" style="text-transform: capitalize;margin-bottom: 5px;" >Maximum Discount ($ USD):</label>
+        <input type="number" class="form-control" style="border: 1px solid rgba(0,0,0,0.2);" min="1" id="maximumAllowedDiscount" name="maximumAllowedDiscount" value="<%= couponData.maximumAllowedDiscount %>">
+
         <label class="mt-3" for="" style="text-transform: capitalize;margin-bottom: 5px;" >Coupon Description:</label>
-        <textarea name="couponDescription" id="couponDescription" cols="30" rows="5" style="border: 1px solid rgba(0,0,0,0.2);"><%=couponDescription%></textarea>
-        <span style="color: rgba(0,0,0,0.7);font-size: 13px;font-weight: 500;">The description of a category is not prominent by default and can be used for user's convenience.</span>
+        <textarea name="couponDescription" id="couponDescription" cols="30" rows="5" style="border: 1px solid rgba(0,0,0,0.2);"><%= couponData.couponDescription %></textarea>
+        <span style="color: rgba(0,0,0,0.7);font-size: 13px;font-weight: 500;">The description of a coupon is not prominent by default and can be used for user's convenience.</span>
 
-        <button class="button-main button-main-md" type="submit" style="border-radius: 2px;margin-top: 10px;">Add New Coupon</button>
+        <button class="button-main button-main-md" type="submit" style="border-radius: 2px;margin-top: 10px;">Update Coupon</button>
         
     </form>
 
@@ -36,9 +33,9 @@
         <div style="width: 100%;padding: 20px;background-color: #fff;height: fit-content;">
             <div style="background-color: #D1FAE5; border-radius: 6px; padding: 10px; margin-top: 15px;">
                     <h6 style="color: #10B981; font-weight: bold; letter-spacing: 2px; line-height: 20px; display: flex; align-items: center; margin-bottom: 10px; gap: 5px;">
-                        <i style="font-size: 22px; line-height: 20px;" class='bx bxs-award'></i> <span id="couponCodePlaceholder"><%=couponCode %></span>
+                        <i style="font-size: 22px; line-height: 20px;" class='bx bxs-award'></i> <span id="couponCodePlaceholder"><%= couponData.couponCode %></span>
                     </h6>
-                    <p style="color: #047857; font-size: 13px; line-height: 18px; margin-top: 5px; padding-left: 30px; padding-right: 30px;">Coupon Applied: <span id="couponDescriptionPlaceholder"><%= couponDescription%></span></p>
+                    <p style="color: #047857; font-size: 13px; line-height: 18px; margin-top: 5px; padding-left: 30px; padding-right: 30px;">Coupon Applied: <span id="couponDescriptionPlaceholder"><%= couponData.couponDescription%></span></p>
                     <div style="text-align: right;">
                         <button  style="color: #e42b5c; font-weight: 600; border: none; background-color: transparent;" >Remove</button>
                     </div>
@@ -46,26 +43,8 @@
 	    </div>
 
         <div class="offers-cards-wr">
-            <div>
-                <figure style="position: relative;">
-                    <img id="imagePreview" style="z-index: 2; max-width: 100%; display: none;position: absolute;" alt="Image Preview"/>
-                    <img src="/images/<%=couponImage%>" style="z-index: 1; max-width: 100%;position: absolute;" alt="Image Preview"/>
-                </figure>
-                <div class="offer-card-content-wr">
-                    <h4 id="couponDescriptionPlaceholderSecond"><%=couponDescription%></h4>
-                    <span>Use Code <span id="couponCodePlaceholderSecond"> <%=couponCode%></span></span>
-                </div>
-            </div>
     </div>
 </div>
-
-<div style=" background-color: #fff;padding: 15px;position: absolute;bottom: 0;font-weight: 400;color: #636261;padding: 15px;font-style: italic;border: 1px dashed rgba(0,0,0,0.25);border-bottom: 0;font-size: 13px;">
-    <p style="margin: 0;">
-        Coupon Management for Batteries. Now, admins can easily create and manage discounts for battery purchases. Streamline your promotional efforts and efficiently offer various discounts on battery products. Simplify your administrative tasks and enhance your marketing strategies with our Coupon Management feature.
-        <span style="font-weight: bold;color: #000;"> ~U-CMS</span></p>
-</div>
-
-
 </div>
 
 
